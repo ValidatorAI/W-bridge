@@ -25,6 +25,7 @@ class BotReply(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     message: Mapped[MessageLog] = relationship(back_populates="bot_replies")
+    reply_sessions: Mapped[list["ReplySession"]] = relationship(back_populates="reply")
 
 
 class Session(Base):
@@ -36,6 +37,7 @@ class Session(Base):
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
     room_pointers: Mapped[list["RoomPointer"]] = relationship(back_populates="session")
     message_sessions: Mapped[list["MessageSession"]] = relationship(back_populates="session")
+    reply_sessions: Mapped[list["ReplySession"]] = relationship(back_populates="session")
 
 
 class RoomPointer(Base):
@@ -58,3 +60,15 @@ class MessageSession(Base):
 
     message: Mapped[MessageLog] = relationship(back_populates="message_sessions")
     session: Mapped[Session] = relationship(back_populates="message_sessions")
+
+
+class ReplySession(Base):
+    __tablename__ = "reply_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    reply_id: Mapped[int] = mapped_column(ForeignKey("bot_replies.id"), nullable=False, index=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("sessions.session_id"), nullable=False, index=True)
+    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    reply: Mapped[BotReply] = relationship(back_populates="reply_sessions")
+    session: Mapped[Session] = relationship(back_populates="reply_sessions")
