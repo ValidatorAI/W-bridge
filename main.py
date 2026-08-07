@@ -70,7 +70,17 @@ async def _process_webhook(payload: dict[str, Any]) -> None:
 	)
 
 	logger.info("Sending reply to: %s", target_url)
-	await _post_reply(target_url, bot_reply)
+	if bot_reply == "Help":
+		help_message = (
+			"Available commands:\n"
+			"- /new: Start a new session.\n"
+			"- /single: Use single message mode.\n"
+			"- /session:<name>: Use a named session.\n"
+			"- /h or /help: Show this help message."
+		)
+		await _post_reply(target_url, help_message)
+	else:
+		await _post_reply(target_url, bot_reply)
 
 	
 
