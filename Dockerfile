@@ -16,9 +16,13 @@ RUN uv pip install --system --no-cache -r requirements.txt
 COPY . .
 
 RUN chmod +x start.sh && \
+    mkdir -p /data/w-bridge && \
     addgroup -S appgroup && \
     adduser -S appuser -G appgroup && \
-    chown -R appuser:appgroup /app
+    chown -R appuser:appgroup /app /data/w-bridge
+
+ENV SQLITE_DB_PATH=/data/w-bridge/w_bridge.db
+VOLUME ["/data/w-bridge"]
 
 USER appuser
 

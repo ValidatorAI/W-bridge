@@ -8,9 +8,12 @@ import uvicorn
 import httpx
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import PlainTextResponse
+from sqlalchemy.orm import Session
 
 from ai import send_chat
 from helpers import _strip_html, str_to_bool
+from db.database import SessionLocal
+from db.models import MessageLog
 
 
 app = FastAPI()
@@ -40,6 +43,27 @@ async def _post_reply(target_url: str, bot_reply: str) -> None:
 			logger.error("Post Error: %s", str(exc))
 
 
+def _save_message_log_sync(
+	user_name: str,
+	room_path: str,
+	raw_html: str,
+) -> None:
+	db: Session = SessionLocal()
+	try:
+		log_item = MessageLog(
+			user_name=user_name,
+			room_path=room_path,
+			raw_html=raw_html,
+		)
+		db.add(log_item)
+		db.commit()
+	except Exception:
+		db.rollback()
+		logger.exception("Failed to save message log")
+	finally:
+		db.close()
+
+
 
 
 async def _process_webhook(payload: dict[str, Any]) -> None:
@@ -59,10 +83,18 @@ async def _process_webhook(payload: dict[str, Any]) -> None:
 	target_url = f"{ROOM_BASE_URL}{room_path}"
 
 	user_name = (payload.get("user") or {}).get("name") or "User"
-	bot_reply = await send_chat(raw_content)
+	cleaned_text = _strip_html(raw_content)
+	bot_reply = await send_chat(cleaned_text)
 
 	logger.info("Sending reply to: %s", target_url)
 	await _post_reply(target_url, bot_reply)
+
+	await asyncio.to_thread(
+		_save_message_log_sync,
+		user_name,
+		room_path,
+		raw_content,
+	)
 
 
 @app.post("/webhook")
