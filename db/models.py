@@ -33,3 +33,14 @@ class Session(Base):
     session_key: Mapped[str] = mapped_column(Text, nullable=False)
     room_id: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+    room_pointers: Mapped[list["RoomPointer"]] = relationship(back_populates="session")
+
+
+class RoomPointer(Base):
+    __tablename__ = "room_pointers"
+
+    room_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("sessions.session_id"), nullable=False, index=True)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+    session: Mapped[Session] = relationship(back_populates="room_pointers")
