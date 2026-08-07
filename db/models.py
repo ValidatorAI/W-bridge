@@ -24,3 +24,12 @@ class BotReply(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     message: Mapped[MessageLog] = relationship(back_populates="bot_replies")
+
+
+class Session(Base):
+    __tablename__ = "sessions"
+
+    session_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    session_key: Mapped[str] = mapped_column(Text, nullable=False)
+    room_id: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
