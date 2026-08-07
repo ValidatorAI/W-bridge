@@ -13,6 +13,7 @@ class MessageLog(Base):
     raw_html: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     bot_replies: Mapped[list["BotReply"]] = relationship(back_populates="message")
+    message_sessions: Mapped[list["MessageSession"]] = relationship(back_populates="message")
 
 
 class BotReply(Base):
@@ -34,6 +35,7 @@ class Session(Base):
     room_id: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
     room_pointers: Mapped[list["RoomPointer"]] = relationship(back_populates="session")
+    message_sessions: Mapped[list["MessageSession"]] = relationship(back_populates="session")
 
 
 class RoomPointer(Base):
@@ -44,3 +46,15 @@ class RoomPointer(Base):
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
 
     session: Mapped[Session] = relationship(back_populates="room_pointers")
+
+
+class MessageSession(Base):
+    __tablename__ = "message_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    message_id: Mapped[int] = mapped_column(ForeignKey("message_logs.id"), nullable=False, index=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("sessions.session_id"), nullable=False, index=True)
+    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    message: Mapped[MessageLog] = relationship(back_populates="message_sessions")
+    session: Mapped[Session] = relationship(back_populates="message_sessions")

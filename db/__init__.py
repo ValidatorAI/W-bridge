@@ -1,4 +1,4 @@
 from db.database import Base, SessionLocal, engine
-from db.models import BotReply, MessageLog, RoomPointer, Session
+from db.models import BotReply, MessageLog, MessageSession, RoomPointer, Session
 
-__all__ = ["Base", "SessionLocal", "engine", "MessageLog", "BotReply", "Session", "RoomPointer"]
+__all__ = ["Base", "SessionLocal", "engine", "MessageLog", "BotReply", "Session", "RoomPointer", "MessageSession"]
