@@ -32,6 +32,16 @@ async def send_chat(message: str, history: list | None = None) -> str:
 
     return response.choices[0].message.content or ""
 
+async def send_chat_history(history: list) -> str:
+    """Send a single message to Hermes and return the reply text."""
+
+    response = await client.chat.completions.create(
+        model=MODEL,
+        messages=history,
+    )
+
+    return response.choices[0].message.content or ""
+
 # Example
 #def example():
 #    print("Chatting with Hermes Agent. Type 'quit' to exit.\n")

@@ -11,7 +11,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
 from application.logic import generate_and_persist_bot_reply
-from helpers import _strip_html, str_to_bool
+from helpers import str_to_bool
 from db.database import SessionLocal
 from db.models import MessageLog
 
@@ -62,13 +62,11 @@ async def _process_webhook(payload: dict[str, Any]) -> None:
 	target_url = f"{ROOM_BASE_URL}{room_path}"
 
 	user_name = (payload.get("user") or {}).get("name") or "User"
-	cleaned_text = _strip_html(raw_content)
 
 	bot_reply = await generate_and_persist_bot_reply(
 		user_name,
 		room_path,
 		raw_content,
-		cleaned_text,
 	)
 
 	logger.info("Sending reply to: %s", target_url)
