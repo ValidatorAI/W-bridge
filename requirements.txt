@@ -1,1 +1,6 @@
--r requirement.txt
+fastapi
+uvicorn[standard]
+httpx
+openai
+sqlalchemy
+alembic

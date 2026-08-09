@@ -50,10 +50,10 @@ Example with a named volume:
 ```bash
 docker volume create wbridge_data
 docker run -d \
-	-p 80:80 \
 	-v wbridge_data:/data/w-bridge \
-	--name w-bridge \
-	your-image-name
+	--name bridge_app \
+	--network w_bridge \
+	bridge
 ```
 
 ## Run Migrations
