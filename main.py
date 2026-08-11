@@ -31,8 +31,7 @@ async def _post_reply(target_url: str, bot_reply: str) -> None:
 		async with httpx.AsyncClient(timeout=20.0) as client:
 			await client.post(
 				target_url,
-				json=bot_reply,
-				headers={"Content-Type": "application/json"},
+				content=bot_reply,
 			)
 		logger.info("Posted reply to Campfire successfully!")
 	except httpx.HTTPError as exc:
@@ -72,11 +71,11 @@ async def _process_webhook(payload: dict[str, Any]) -> None:
 	logger.info("Sending reply to: %s", target_url)
 	if bot_reply == "Help":
 		help_message = (
-			"Available commands:\n"
-			"- /new: Start a new session.\n"
-			"- /single: Use single message mode.\n"
-			"- /session:<name>: Use a named session.\n"
-			"- /h or /help: Show this help message."
+			"Available commands:<br/>"
+			"<a>/new</a>: Start a new session.<br/>"
+			"<a>/single</a>: Use single message mode.<br/>"
+			"<a>/session:name</a>: Use a named session.<br/>"
+			"<a>/h</a> or <a>/help</a>: Show this help message."
 		)
 		await _post_reply(target_url, help_message)
 	else:

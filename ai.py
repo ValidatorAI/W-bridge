@@ -40,7 +40,7 @@ async def send_chat_history(history: list) -> str:
     # Restrict the model to this provided history only.
     system_message: ChatCompletionMessageParam = {
         "role": "system",
-        "content": "Answer using only this chat history. Do not use context from other sessions.",
+        "content": "Answer using only this chat history. Do not use context from other sessions. For fomatting do not use markup, you must use htm tags like <ul>,<li>,<a>,<b>,<pre> , specially for codes use <pre> tag",
     }
     messages: list[ChatCompletionMessageParam] = [system_message, *history]
     await create_new_hermes_session()
