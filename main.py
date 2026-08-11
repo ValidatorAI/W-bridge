@@ -31,18 +31,22 @@ async def _post_reply(target_url: str, bot_reply: str) -> None:
 		# sanitize bot reply & parapere it for campfire
 		bot_reply = bot_reply.replace("%", " percent")
 		async with httpx.AsyncClient(timeout=20.0) as client:
-			c = await client.post(
+			response = await client.post(
 				target_url,
 				content=bot_reply,
+				headers={"Content-Type": "text/html; charset=utf-8"},
 			)
-			b = 1
+			response.raise_for_status()
 		logger.info("Posted reply to Campfire successfully!")
-	except httpx.HTTPError as exc:
-		response = getattr(exc, "response", None)
-		if response is not None:
-			logger.error("Post Error: %s %s", response.status_code, response.text)
-		else:
-			logger.error("Post Error: %s", str(exc))
+	except httpx.HTTPStatusError as exc:
+		logger.error(
+			"Post Error: %s %s | url=%s",
+			exc.response.status_code,
+			exc.response.text,
+			str(exc.request.url),
+		)
+	except httpx.RequestError as exc:
+		logger.error("Request Error: %s", str(exc))
 
 
 
