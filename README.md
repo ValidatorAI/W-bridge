@@ -79,3 +79,7 @@ POST /webhook
 ```
 
 Each processed webhook message is stored in `message_logs`.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
