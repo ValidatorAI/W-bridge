@@ -11,7 +11,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
 from application.logic import generate_and_persist_bot_reply
-from helpers import str_to_bool
+from helpers.helpers import str_to_bool
 from db.database import SessionLocal
 from db.models import MessageLog
 

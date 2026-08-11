@@ -2,7 +2,7 @@ import asyncio
 import logging
 import re
 import uuid
-from ai import send_chat_history
+from agent.hermes import send_chat_history
 from application.command import _create_message_session_sync, _create_reply_session_sync, _create_session_sync, _get_active_session_id_by_room_sync, _get_session_history_sync, _get_session_id_by_key_and_room_sync, _save_bot_reply_sync, _save_message_log_sync
 
 

@@ -219,3 +219,4 @@ __marimo__/
 bridge/*
 .vscode/*
 w_bridge.db
+manual/test.py
