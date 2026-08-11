@@ -28,11 +28,14 @@ RELOAD = str_to_bool(os.getenv("RELOAD", "False"))
 
 async def _post_reply(target_url: str, bot_reply: str) -> None:
 	try:
+		# sanitize bot reply & parapere it for campfire
+		bot_reply = bot_reply.replace("%", " percent")
 		async with httpx.AsyncClient(timeout=20.0) as client:
-			await client.post(
+			c = await client.post(
 				target_url,
 				content=bot_reply,
 			)
+			b = 1
 		logger.info("Posted reply to Campfire successfully!")
 	except httpx.HTTPError as exc:
 		response = getattr(exc, "response", None)
