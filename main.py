@@ -26,6 +26,11 @@ PORT = os.getenv("PORT", "80")
 RELOAD = str_to_bool(os.getenv("RELOAD", "False"))
 
 
+def _append_internal_session_footer(message: str, session_key: str | None) -> str:
+	session_label = session_key if session_key else "N/A"
+	return f'{message}<br/><span class="red">our internal session_key </span>{session_label}'
+
+
 async def _post_reply(target_url: str, bot_reply: str) -> None:
 	try:
 		# sanitize bot reply & parapere it for campfire
@@ -69,7 +74,7 @@ async def _process_webhook(payload: dict[str, Any]) -> None:
 
 	user_name = (payload.get("user") or {}).get("name") or "User"
 
-	bot_reply = await generate_and_persist_bot_reply(
+	bot_reply, local_session_key = await generate_and_persist_bot_reply(
 		user_name,
 		room_path,
 		raw_content,
@@ -84,9 +89,9 @@ async def _process_webhook(payload: dict[str, Any]) -> None:
 			"<a>/session:name</a>: Use a named session.<br/>"
 			"<a>/h</a> or <a>/help</a>: Show this help message."
 		)
-		await _post_reply(target_url, help_message)
+		await _post_reply(target_url, _append_internal_session_footer(help_message, local_session_key))
 	else:
-		await _post_reply(target_url, bot_reply)
+		await _post_reply(target_url, _append_internal_session_footer(bot_reply, local_session_key))
 
 	
 

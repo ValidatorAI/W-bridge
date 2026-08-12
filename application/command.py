@@ -109,23 +109,42 @@ def _create_message_session_sync(message_id: int, session_id: int) -> None:
 		db.close()
 
 
-def _create_reply_session_sync(reply_id: int, room_id: str) -> None:
+def _create_reply_session_sync(reply_id: int, session_id: int) -> None:
 	db: Session = SessionLocal()
 	try:
-		existing_pointer = _get_room_pointer_by_room_id_query(db, room_id)
-		if existing_pointer is None:
-			logger.warning("Skipping reply-session link because no room pointer exists")
-			return
-
 		reply_session_item = ReplySession(
 			reply_id=reply_id,
-			session_id=existing_pointer.session_id,
+			session_id=session_id,
 		)
 		db.add(reply_session_item)
 		db.commit()
 	except Exception:
 		db.rollback()
 		logger.exception("Failed to create reply session link")
+	finally:
+		db.close()
+
+
+def _set_active_session_for_room_sync(room_id: str, session_id: int) -> None:
+	db: Session = SessionLocal()
+	try:
+		updated_at = datetime.now(timezone.utc).isoformat()
+		existing_pointer = _get_room_pointer_by_room_id_query(db, room_id)
+		if existing_pointer is None:
+			db.add(
+				RoomPointer(
+					room_id=room_id,
+					session_id=session_id,
+					updated_at=updated_at,
+				)
+			)
+		else:
+			existing_pointer.session_id = session_id
+			existing_pointer.updated_at = updated_at
+		db.commit()
+	except Exception:
+		db.rollback()
+		logger.exception("Failed to set active session for room")
 	finally:
 		db.close()
 
@@ -158,6 +177,20 @@ def _get_active_session_id_by_room_sync(room_id: str) -> int | None:
 		return session_item.session_id
 	except Exception:
 		logger.exception("Failed to fetch active session id by room")
+		return None
+	finally:
+		db.close()
+
+
+def _get_session_key_by_id_sync(session_id: int) -> str | None:
+	db: Session = SessionLocal()
+	try:
+		session_item = _get_session_by_id_query(db, session_id)
+		if session_item is None:
+			return None
+		return session_item.session_key
+	except Exception:
+		logger.exception("Failed to fetch session key by id")
 		return None
 	finally:
 		db.close()

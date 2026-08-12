@@ -3,8 +3,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
-from openai import AsyncOpenAI
-from openai.types.chat import ChatCompletionMessageParam
+
 
 # --- Configuration ---------------------------------------------------
 # Point this at wherever your Hermes Agent instance is running.
@@ -25,9 +24,6 @@ MODEL = os.environ.get("MODEL", "deepseek-v4-flash")
 
 REQUEST_TIMEOUT = float(os.environ.get("HERMES_HTTP_TIMEOUT", "60"))
 
-client = AsyncOpenAI(base_url=BASE_URL, api_key=API_KEY)
-
-base_system_prompt = "Answer using only this chat history. Do not use context from other sessions. For formatting do not use markup, you must use HTML tags like <ul>,<li>,<a>,<b>,<pre>, specially for codes use <pre> tag"
 
 
 def _auth_headers(
@@ -328,38 +324,7 @@ async def model_options_get(*, refresh: bool = False) -> dict[str, Any]:
     params = {"refresh": 1} if refresh else None
     return await _request("GET", "/api/model/options", params=params)
 
-# ----------------------------- Hermes-version -----------------------------
-
-async def send_chat(message: str, history: list | None = None) -> str:
-    """Send a single message to Hermes and return the reply text."""
-    messages = (history or []) + [{"role": "user", "content": message}]
-
-    response = await client.chat.completions.create(
-        model=MODEL,
-        messages=messages,
-    )
-
-    return response.choices[0].message.content or ""
-
-
-async def send_chat_history(history: list) -> str:
-    """Send one full chat history to Hermes and return the assistant reply."""
-    # Restrict the model to this provided history only.
-    system_message: ChatCompletionMessageParam = {
-        "role": "system",
-        "content": base_system_prompt,
-    }
-    messages: list[ChatCompletionMessageParam] = [system_message, *history]
-    await create_new_hermes_session()
-    response = await client.chat.completions.create(
-        model=MODEL,
-        messages=messages,
-    )
-
-    return response.choices[0].message.content or ""
-
-
-async def create_new_hermes_session() -> None:
+async def create_new_hermes_session(payload: dict[str, Any] | None = None) -> dict[str, Any]:
     """Create a new Hermes session with POST /api/sessions."""
-    await sessions_create({})
+    return await sessions_create(payload or {})
 
