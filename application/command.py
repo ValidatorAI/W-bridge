@@ -1,7 +1,16 @@
 from sqlalchemy.orm import Session
 from db.database import SessionLocal
-from db.models import BotReply, MessageLog, MessageSession, ReplySession, RoomPointer, Session as ChatSession
-from application.query import _get_room_pointer_by_room_id_query, _get_session_by_id_query, _get_session_by_key_and_room_query, _get_session_message_reply_rows_query
+from db.models import BotReply, HermessMessage, HermesSession, MessageLog, MessageSession, ReplySession, RoomPointer, Session as ChatSession
+from application.query import (
+	_get_hermes_session_by_id_query,
+	_get_hermes_session_by_session_id_query,
+	_get_hermess_message_by_id_query,
+	_get_hermess_message_by_message_id_query,
+	_get_room_pointer_by_room_id_query,
+	_get_session_by_id_query,
+	_get_session_by_key_and_room_query,
+	_get_session_message_reply_rows_query,
+)
 import logging
 from datetime import datetime, timezone
 
@@ -167,5 +176,99 @@ def _get_session_history_sync(session_id: int) -> list[dict[str, str]]:
 	except Exception:
 		logger.exception("Failed to fetch session history")
 		return []
+	finally:
+		db.close()
+
+
+def _create_hermes_session_sync(
+	hermes_id: str,
+	session_id: int,
+	is_forked: bool = False,
+	parent: str | None = None,
+) -> str | None:
+	db: Session = SessionLocal()
+	try:
+		hermes_session_item = HermesSession(
+			id=hermes_id,
+			session_id=session_id,
+			is_forked=is_forked,
+			parent=parent,
+		)
+		db.add(hermes_session_item)
+		db.commit()
+		db.refresh(hermes_session_item)
+		return hermes_session_item.id
+	except Exception:
+		db.rollback()
+		logger.exception("Failed to create hermes session")
+		return None
+	finally:
+		db.close()
+
+
+def _create_hermess_message_sync(
+	hermes_message_id: str,
+	message_id: int,
+	is_bot_reply: bool,
+) -> str | None:
+	db: Session = SessionLocal()
+	try:
+		hermess_message_item = HermessMessage(
+			hermes_message_id=hermes_message_id,
+			message_id=message_id,
+			is_bot_reply=is_bot_reply,
+		)
+		db.add(hermess_message_item)
+		db.commit()
+		db.refresh(hermess_message_item)
+		return hermess_message_item.hermes_message_id
+	except Exception:
+		db.rollback()
+		logger.exception("Failed to create hermess message")
+		return None
+	finally:
+		db.close()
+
+
+def _get_hermes_session_by_id_sync(hermes_id: str) -> HermesSession | None:
+	db: Session = SessionLocal()
+	try:
+		return _get_hermes_session_by_id_query(db, hermes_id)
+	except Exception:
+		logger.exception("Failed to fetch hermes session by id")
+		return None
+	finally:
+		db.close()
+
+
+def _get_hermes_session_by_session_id_sync(session_id: int) -> HermesSession | None:
+	db: Session = SessionLocal()
+	try:
+		return _get_hermes_session_by_session_id_query(db, session_id)
+	except Exception:
+		logger.exception("Failed to fetch hermes session by session_id")
+		return None
+	finally:
+		db.close()
+
+
+def _get_hermess_message_by_id_sync(hermes_message_id: str) -> HermessMessage | None:
+	db: Session = SessionLocal()
+	try:
+		return _get_hermess_message_by_id_query(db, hermes_message_id)
+	except Exception:
+		logger.exception("Failed to fetch hermess message by id")
+		return None
+	finally:
+		db.close()
+
+
+def _get_hermess_message_by_message_id_sync(message_id: int) -> HermessMessage | None:
+	db: Session = SessionLocal()
+	try:
+		return _get_hermess_message_by_message_id_query(db, message_id)
+	except Exception:
+		logger.exception("Failed to fetch hermess message by message_id")
+		return None
 	finally:
 		db.close()

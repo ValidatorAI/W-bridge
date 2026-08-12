@@ -2,7 +2,7 @@ from typing import cast
 
 from sqlalchemy.orm import Session
 
-from db.models import BotReply, MessageLog, MessageSession, RoomPointer, Session as ChatSession
+from db.models import BotReply, HermessMessage, HermesSession, MessageLog, MessageSession, RoomPointer, Session as ChatSession
 
 
 def _get_room_pointer_by_room_id_query(db: Session, room_id: str) -> RoomPointer | None:
@@ -34,3 +34,19 @@ def _get_session_message_reply_rows_query(db: Session, session_id: int) -> list[
 		.all()
 		),
 	)
+
+
+def _get_hermes_session_by_id_query(db: Session, hermes_id: str) -> HermesSession | None:
+	return db.query(HermesSession).filter(HermesSession.id == hermes_id).first()
+
+
+def _get_hermes_session_by_session_id_query(db: Session, session_id: int) -> HermesSession | None:
+	return db.query(HermesSession).filter(HermesSession.session_id == session_id).first()
+
+
+def _get_hermess_message_by_id_query(db: Session, hermes_message_id: str) -> HermessMessage | None:
+	return db.query(HermessMessage).filter(HermessMessage.hermes_message_id == hermes_message_id).first()
+
+
+def _get_hermess_message_by_message_id_query(db: Session, message_id: int) -> HermessMessage | None:
+	return db.query(HermessMessage).filter(HermessMessage.message_id == message_id).first()

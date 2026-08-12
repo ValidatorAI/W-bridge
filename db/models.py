@@ -1,4 +1,4 @@
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.database import Base
@@ -38,6 +38,7 @@ class Session(Base):
     room_pointers: Mapped[list["RoomPointer"]] = relationship(back_populates="session")
     message_sessions: Mapped[list["MessageSession"]] = relationship(back_populates="session")
     reply_sessions: Mapped[list["ReplySession"]] = relationship(back_populates="session")
+    hermes_sessions: Mapped[list["HermesSession"]] = relationship(back_populates="session")
 
 
 class RoomPointer(Base):
@@ -72,3 +73,22 @@ class ReplySession(Base):
 
     reply: Mapped[BotReply] = relationship(back_populates="reply_sessions")
     session: Mapped[Session] = relationship(back_populates="reply_sessions")
+
+
+class HermesSession(Base):
+    __tablename__ = "hermes_sessions"
+
+    id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    is_forked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    parent: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    session_id: Mapped[int] = mapped_column(ForeignKey("sessions.session_id"), nullable=False, index=True)
+
+    session: Mapped[Session] = relationship(back_populates="hermes_sessions")
+
+
+class HermessMessage(Base):
+    __tablename__ = "hermess_messages"
+
+    hermes_message_id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    message_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_bot_reply: Mapped[bool] = mapped_column(Boolean, nullable=False)
