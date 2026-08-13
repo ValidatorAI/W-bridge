@@ -6,6 +6,8 @@ import os
 import asyncio
 import base64
 import json
+import mimetypes
+from pathlib import Path
 import uvicorn
 import httpx
 from fastapi import BackgroundTasks, FastAPI, Request
@@ -29,6 +31,12 @@ PORT = os.getenv("PORT", "80")
 RELOAD = str_to_bool(os.getenv("RELOAD", "False"))
 MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(5 * 1024 * 1024)))
 MAX_TEXT_ATTACHMENT_CHARS = int(os.getenv("MAX_TEXT_ATTACHMENT_CHARS", "12000"))
+MAX_REPLY_FILE_UPLOADS = int(os.getenv("MAX_REPLY_FILE_UPLOADS", "5"))
+MAX_REPLY_FILE_UPLOAD_BYTES = int(os.getenv("MAX_REPLY_FILE_UPLOAD_BYTES", str(20 * 1024 * 1024)))
+
+_MENTIONED_FILE_PATTERN = re.compile(
+	r"(?:^|[\s\"'(<\[])(?:`)?((?:\./|\.\./|/)[^\s`\"'<>\]\)]+)(?:`)?(?=$|[\s\"'\]>\)])"
+)
 
 
 def _is_textual_content_type(content_type: str | None) -> bool:
@@ -272,6 +280,112 @@ async def _post_reply(target_url: str, bot_reply: str) -> None:
 		logger.error("Request Error: %s", str(exc))
 
 
+def _extract_mentioned_file_paths(reply_text: str) -> list[str]:
+	if not reply_text:
+		return []
+
+	# Replies are HTML-formatted; strip tags to avoid matching closing tags like </pre>.
+	normalized = re.sub(r"<[^>]+>", " ", html.unescape(reply_text))
+	paths: list[str] = []
+	seen: set[str] = set()
+	for match in _MENTIONED_FILE_PATTERN.finditer(normalized):
+		candidate = (match.group(1) or "").strip()
+		if not candidate:
+			continue
+		if "://" in candidate:
+			continue
+		if candidate in seen:
+			continue
+		seen.add(candidate)
+		paths.append(candidate)
+	return paths
+
+
+def _resolve_uploadable_files(path_mentions: list[str]) -> list[Path]:
+	resolved_files: list[Path] = []
+	for mentioned_path in path_mentions:
+		candidate = Path(mentioned_path)
+		if not candidate.is_absolute():
+			candidate = (Path.cwd() / candidate).resolve()
+		else:
+			candidate = candidate.resolve()
+
+		if not candidate.exists() or not candidate.is_file():
+			logger.info("Mentioned file was not found or is not a file: %s", candidate)
+			continue
+
+		try:
+			size = candidate.stat().st_size
+		except OSError:
+			logger.info("Unable to stat mentioned file: %s", candidate)
+			continue
+
+		if size > MAX_REPLY_FILE_UPLOAD_BYTES:
+			logger.info(
+				"Mentioned file is too large for upload (%s bytes > %s): %s",
+				size,
+				MAX_REPLY_FILE_UPLOAD_BYTES,
+				candidate,
+			)
+			continue
+
+		if not os.access(candidate, os.R_OK):
+			logger.info("Mentioned file is not readable: %s", candidate)
+			continue
+
+		resolved_files.append(candidate)
+		if len(resolved_files) >= MAX_REPLY_FILE_UPLOADS:
+			logger.info("Reached max reply file uploads limit (%s)", MAX_REPLY_FILE_UPLOADS)
+			break
+
+	return resolved_files
+
+
+def _collect_uploadable_mentioned_files(bot_reply: str) -> list[Path]:
+	mentioned_paths = _extract_mentioned_file_paths(bot_reply)
+	if not mentioned_paths:
+		return []
+	return _resolve_uploadable_files(mentioned_paths)
+
+
+async def _post_file_to_campfire(upload_url: str, file_path: Path) -> bool:
+	mime_type, _ = mimetypes.guess_type(str(file_path))
+	content_type = mime_type or "application/octet-stream"
+
+	try:
+		with file_path.open("rb") as fp:
+			async with httpx.AsyncClient(timeout=20.0) as client:
+				response = await client.post(
+					upload_url,
+					files={"attachment": (file_path.name, fp, content_type)},
+				)
+			response.raise_for_status()
+		logger.info("Posted file to Campfire successfully: %s", file_path)
+		return True
+	except httpx.HTTPStatusError as exc:
+		logger.warning(
+			"Campfire rejected attachment upload for %s: %s %s",
+			file_path,
+			exc.response.status_code,
+			exc.response.text,
+		)
+	except OSError:
+		logger.warning("Failed to open mentioned file for upload: %s", file_path)
+	except httpx.RequestError as exc:
+		logger.warning("Request error while uploading mentioned file %s: %s", file_path, str(exc))
+
+	return False
+
+
+async def _post_mentioned_files_to_campfire(target_url: str, bot_reply: str) -> None:
+	uploadable_files = _collect_uploadable_mentioned_files(bot_reply)
+	if not uploadable_files:
+		return
+
+	for file_path in uploadable_files:
+		await _post_file_to_campfire(target_url, file_path)
+
+
 
 
 async def _process_webhook(
@@ -320,7 +434,9 @@ async def _process_webhook(
 		)
 		await _post_reply(target_url, _append_internal_session_footer(help_message, local_session_key))
 	else:
-		await _post_reply(target_url, _append_internal_session_footer(bot_reply, local_session_key))
+		rendered_reply = _append_internal_session_footer(bot_reply, local_session_key)
+		await _post_reply(target_url, rendered_reply)
+		await _post_mentioned_files_to_campfire(target_url, bot_reply)
 
 	
 
