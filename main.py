@@ -1,17 +1,17 @@
 import logging
 from typing import Any
+
 import uvicorn
 import httpx
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import PlainTextResponse
-from sqlalchemy.orm import Session
 
 from application.logic import generate_and_persist_bot_reply
+from application.query import _get_active_bot_by_token_query
 from helpers.helpers import str_to_bool
 from helpers.upload import parse_request_input, post_mentioned_files_to_campfire
-from hermpers.environment import PORT, RELOAD, ROOM_BASE_URL
+from hermpers.environment import MASTER_KEY_TOKEN, PORT, RELOAD, ROOM_BASE_URL
 from db.database import SessionLocal
-from db.models import MessageLog
 
 
 app = FastAPI()
@@ -105,6 +105,16 @@ async def _process_webhook(
 
 @app.post("/webhook")
 async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainTextResponse:
+	token = str(request.query_params.get("token") or "").strip()
+	if not token:
+		return PlainTextResponse("credential is not exists or known", status_code=200)
+
+	if not (MASTER_KEY_TOKEN and token == MASTER_KEY_TOKEN):
+		with SessionLocal() as db:
+			bot = _get_active_bot_by_token_query(db, token)
+		if bot is None:
+			return PlainTextResponse("credential is not exists or known", status_code=200)
+
 	user_name, room_path, raw_content, attachment_parts, attachment_log = await parse_request_input(request)
 	background_tasks.add_task(
 		_process_webhook,

@@ -2,7 +2,7 @@ from typing import cast
 
 from sqlalchemy.orm import Session
 
-from db.models import BotReply, HermessMessage, HermesSession, MessageLog, MessageSession, RoomPointer, Session as ChatSession
+from db.models import Bot, BotReply, HermessMessage, HermesSession, MessageLog, MessageSession, RoomPointer, Session as ChatSession
 
 
 def _get_room_pointer_by_room_id_query(db: Session, room_id: str) -> RoomPointer | None:
@@ -20,6 +20,10 @@ def _get_session_by_key_and_room_query(db: Session, session_key: str, room_id: s
 
 def _get_session_by_id_query(db: Session, session_id: int) -> ChatSession | None:
 	return db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
+
+
+def _get_active_bot_by_token_query(db: Session, token: str) -> Bot | None:
+	return db.query(Bot).filter(Bot.token == token, Bot.active.is_(True)).first()
 
 
 def _get_session_message_reply_rows_query(db: Session, session_id: int) -> list[tuple[MessageLog, BotReply | None]]:
