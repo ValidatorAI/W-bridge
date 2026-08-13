@@ -28,6 +28,16 @@ class BotReply(Base):
     reply_sessions: Mapped[list["ReplySession"]] = relationship(back_populates="reply")
 
 
+class Bot(Base):
+    __tablename__ = "bots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    profile_name: Mapped[str] = mapped_column(String(255), nullable=False, default="default", server_default="default")
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    token: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+
+
 class Session(Base):
     __tablename__ = "sessions"
 
