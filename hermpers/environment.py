@@ -7,6 +7,7 @@ BASE_URI = os.environ.get("BASE_URI", _base_uri_from_url).rstrip("/")
 
 API_KEY = os.environ.get("API_KEY", "your_api_key_here")
 API_SERVER_KEY = os.environ.get("API_SERVER_KEY", API_KEY)
+MASTER_KEY_TOKEN = os.environ.get("MASTER_KEY_TOKEN", "")
 MODEL = os.environ.get("MODEL", "deepseek-v4-flash")
 HERMES_HTTP_TIMEOUT = float(os.environ.get("HERMES_HTTP_TIMEOUT", "60"))
 

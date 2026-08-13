@@ -78,7 +78,65 @@ Webhook endpoint:
 POST /webhook
 ```
 
+### Webhook Authentication
+
+The webhook requires a `token` query parameter.
+
+Required environment variable:
+
+- `MASTER_KEY_TOKEN` (must be set in `.env`)
+
+Behavior:
+
+- If `token` equals `MASTER_KEY_TOKEN`, the request is accepted and processed without bot lookup.
+- Otherwise, `token` must match an active bot token from the `bots` table.
+
+Example `.env` entry:
+
+```dotenv
+MASTER_KEY_TOKEN=some-master-key-token
+```
+
 Each processed webhook message is stored in `message_logs`.
+
+## Hermes Multi-Profile Routing Requirements
+
+If you enable multiplexing with:
+
+```bash
+echo "GATEWAY_MULTIPLEX_PROFILES=true" >> ~/.hermes/.env
+```
+
+make sure all of the following are in place.
+
+- Set the flag on the default profile only (the default gateway becomes the multiplexer).
+- Restart the default gateway after changing config:
+
+```bash
+hermes gateway restart
+```
+
+- For every named profile, set a distinct `API_SERVER_KEY` in `~/.hermes/profiles/<profile>/.env`.
+- Keep port-binding HTTP platforms on the default profile only while multiplexing is enabled (for example `api_server`, `webhook`, `msgraph_webhook`, `feishu`, `wecom_callback`, `bluebubbles`, `sms`, `whatsapp_cloud`, `line`).
+- Use profile-prefixed routes for named profiles: `/p/<profile>/...`.
+- Use profile-matching auth keys:
+	- `/v1/...` and `/p/default/...` use the default profile key.
+	- `/p/<named-profile>/...` must use that named profile's key.
+
+Verification examples:
+
+```bash
+# default profile
+curl -H "Authorization: Bearer DEFAULT_KEY" http://127.0.0.1:8642/v1/health
+
+# named profile
+curl -H "Authorization: Bearer CODER_KEY" http://127.0.0.1:8642/p/coder/v1/health
+```
+
+Expected behavior:
+
+- Default key on a named profile prefix returns `401`.
+- Unknown/unconfigured profile prefix returns `404`.
 
 ## License
 
