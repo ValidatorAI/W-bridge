@@ -1,9 +1,7 @@
-import os
 from typing import Any
 
 from agent.hermes import chat_completions
-
-MODEL = os.environ.get("MODEL", "deepseek-v4-flash")
+from hermpers.environment import MODEL
 
 base_system_prompt = "Answer using only this chat history. Do not use context from other sessions. For formatting do not use markup, you must use HTML tags like <ul>,<li>,<a>,<b>,<pre>, specially for codes use <pre> tag"
 

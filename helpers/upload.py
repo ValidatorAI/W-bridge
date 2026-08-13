@@ -10,15 +10,16 @@ from typing import Any
 
 import httpx
 from fastapi import Request
+from hermpers.environment import (
+	MAX_REPLY_FILE_UPLOAD_BYTES,
+	MAX_REPLY_FILE_UPLOADS,
+	MAX_TEXT_ATTACHMENT_CHARS,
+	MAX_UPLOAD_BYTES,
+)
 from starlette.datastructures import UploadFile
 
 
 logger = logging.getLogger(__name__)
-
-MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(5 * 1024 * 1024)))
-MAX_TEXT_ATTACHMENT_CHARS = int(os.getenv("MAX_TEXT_ATTACHMENT_CHARS", "12000"))
-MAX_REPLY_FILE_UPLOADS = int(os.getenv("MAX_REPLY_FILE_UPLOADS", "5"))
-MAX_REPLY_FILE_UPLOAD_BYTES = int(os.getenv("MAX_REPLY_FILE_UPLOAD_BYTES", str(20 * 1024 * 1024)))
 
 _MENTIONED_FILE_PATTERN = re.compile(
 	r"(?:^|[\s\"'(<\[])(?:`)?((?:\./|\.\./|/)[^\s`\"'<>\]\)]+)(?:`)?(?=$|[\s\"'\]>\)])"

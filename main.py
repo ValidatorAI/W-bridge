@@ -1,6 +1,5 @@
 import logging
 from typing import Any
-import os
 import uvicorn
 import httpx
 from fastapi import BackgroundTasks, FastAPI, Request
@@ -10,6 +9,7 @@ from sqlalchemy.orm import Session
 from application.logic import generate_and_persist_bot_reply
 from helpers.helpers import str_to_bool
 from helpers.upload import parse_request_input, post_mentioned_files_to_campfire
+from hermpers.environment import PORT, RELOAD, ROOM_BASE_URL
 from db.database import SessionLocal
 from db.models import MessageLog
 
@@ -19,9 +19,7 @@ app = FastAPI()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-ROOM_BASE_URL = os.getenv("ROOM_BASE_URL", "https://chat.nvgtrs.io").rstrip("/")
-PORT = os.getenv("PORT", "80")
-RELOAD = str_to_bool(os.getenv("RELOAD", "False"))
+RELOAD = str_to_bool(RELOAD)
 
 
 def _append_internal_session_footer(message: str, session_key: str | None) -> str:

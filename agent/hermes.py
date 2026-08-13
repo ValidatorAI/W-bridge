@@ -1,28 +1,12 @@
-import os
 from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
+from hermpers.environment import API_SERVER_KEY, BASE_URI, HERMES_HTTP_TIMEOUT
 
 
 # --- Configuration ---------------------------------------------------
-# Point this at wherever your Hermes Agent instance is running.
-# Examples:
-#   Local:  "http://localhost:8642/v1"
-#   Remote: "https://your-hermes-host.example.com/v1"
-BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:8642/v1").rstrip("/")
-
-_base_uri_from_url = BASE_URL[:-3] if BASE_URL.endswith("/v1") else BASE_URL
-BASE_URI = os.environ.get("BASE_URI", _base_uri_from_url).rstrip("/")
-
-# Hermes needs an API key to authenticate with your underlying model provider.
-API_KEY = os.environ.get("API_KEY", "your_api_key_here")
-API_SERVER_KEY = os.environ.get("API_SERVER_KEY", API_KEY)
-
-# Model name as configured/expected by your Hermes setup.
-MODEL = os.environ.get("MODEL", "deepseek-v4-flash")
-
-REQUEST_TIMEOUT = float(os.environ.get("HERMES_HTTP_TIMEOUT", "60"))
+REQUEST_TIMEOUT = HERMES_HTTP_TIMEOUT
 
 
 

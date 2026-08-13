@@ -2,27 +2,7 @@ import os
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-
-
-def _default_sqlite_path() -> str:
-	# In Docker use a volume-friendly location; local runs stay in the project directory.
-	if os.path.exists("/.dockerenv"):
-		return "/data/w-bridge/w_bridge.db"
-	return "./w_bridge.db"
-
-
-def _build_database_url() -> str:
-	explicit_database_url = os.getenv("DATABASE_URL")
-	if explicit_database_url:
-		return explicit_database_url
-
-	sqlite_path = os.getenv("SQLITE_DB_PATH", _default_sqlite_path())
-	if sqlite_path.startswith("/"):
-		return f"sqlite:////{sqlite_path.lstrip('/')}"
-	return f"sqlite:///{sqlite_path}"
-
-
-DATABASE_URL = _build_database_url()
+from hermpers.environment import DATABASE_URL
 
 if DATABASE_URL.startswith("sqlite:///"):
 	sqlite_file_path = DATABASE_URL.replace("sqlite:///", "", 1)
