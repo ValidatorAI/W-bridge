@@ -56,6 +56,7 @@ async def _process_webhook(
 	raw_content: str,
 	attachment_parts: list[dict[str, Any]],
 	attachment_log: str,
+	profile_name: str,
 ) -> None:
 	if not raw_content and not attachment_parts:
 		logger.warning(
@@ -82,6 +83,7 @@ async def _process_webhook(
 		raw_content,
 		attachment_parts=attachment_parts,
 		attachment_log=attachment_log,
+		profile_name=profile_name,
 	)
 
 	logger.info("Sending reply to: %s", target_url)
@@ -109,11 +111,15 @@ async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainT
 	if not token:
 		return PlainTextResponse("credential is not exists or known", status_code=200)
 
-	if not (MASTER_KEY_TOKEN and token == MASTER_KEY_TOKEN):
+	selected_profile = "default"
+	if MASTER_KEY_TOKEN and token == MASTER_KEY_TOKEN:
+		selected_profile = "default"
+	else:
 		with SessionLocal() as db:
 			bot = _get_active_bot_by_token_query(db, token)
 		if bot is None:
 			return PlainTextResponse("credential is not exists or known", status_code=200)
+		selected_profile = (bot.profile_name or "default").strip() or "default"
 
 	user_name, room_path, raw_content, attachment_parts, attachment_log = await parse_request_input(request)
 	background_tasks.add_task(
@@ -123,6 +129,7 @@ async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainT
 		raw_content,
 		attachment_parts,
 		attachment_log,
+		selected_profile,
 	)
 	return PlainTextResponse("OK", status_code=200)
 

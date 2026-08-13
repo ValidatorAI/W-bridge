@@ -323,7 +323,7 @@ def _extract_hermes_message_id(payload: dict[str, Any] | None) -> str | None:
     return None
 
 
-async def _ensure_hermes_session_id(local_session_id: int) -> str | None:
+async def _ensure_hermes_session_id(local_session_id: int, profile_name: str) -> str | None:
     existing_hermes_session = await asyncio.to_thread(
         _get_hermes_session_by_session_id_sync,
         local_session_id,
@@ -331,7 +331,7 @@ async def _ensure_hermes_session_id(local_session_id: int) -> str | None:
     if existing_hermes_session is not None:
         return existing_hermes_session.id
 
-    hermes_create_response = await create_new_hermes_session({})
+    hermes_create_response = await create_new_hermes_session({}, profile=profile_name)
     hermes_session_id = _extract_hermes_session_id(hermes_create_response)
     if hermes_session_id is None:
         logger.error("Hermes session creation succeeded but session id was not found in response")
@@ -590,6 +590,7 @@ async def generate_and_persist_bot_reply(
     raw_content: str,
     attachment_parts: list[dict[str, Any]] | None = None,
     attachment_log: str | None = None,
+    profile_name: str = "default",
 ) -> tuple[str, str | None]:
     resolved_attachment_parts = attachment_parts or []
     message_text_for_storage = _message_for_storage(raw_content, attachment_log)
@@ -625,7 +626,11 @@ async def generate_and_persist_bot_reply(
                     fork_payload: dict[str, Any] = {}
                     if local_session_key is not None:
                         fork_payload["title"] = local_session_key
-                    hermes_fork_response = await sessions_fork(parent_hermes_session.id, fork_payload)
+                    hermes_fork_response = await sessions_fork(
+                        parent_hermes_session.id,
+                        fork_payload,
+                        profile=profile_name,
+                    )
                     forked_hermes_session_id = _extract_hermes_session_id(hermes_fork_response)
                     if forked_hermes_session_id is not None:
                         created_fork = await asyncio.to_thread(
@@ -641,7 +646,7 @@ async def generate_and_persist_bot_reply(
                     logger.exception("Failed to fork Hermes session; falling back to regular session creation")
 
         if hermes_session_id is None:
-            hermes_session_id = await _ensure_hermes_session_id(local_session_id)
+            hermes_session_id = await _ensure_hermes_session_id(local_session_id, profile_name)
 
         if message_id is not None and hermes_session_id is not None:
             await asyncio.to_thread(
@@ -654,6 +659,7 @@ async def generate_and_persist_bot_reply(
     bot_reply, bot_payload = await send_chat_history(
         message_payload,
         session_id=hermes_session_id,
+        profile=profile_name,
     )
 
     if message_id is not None:

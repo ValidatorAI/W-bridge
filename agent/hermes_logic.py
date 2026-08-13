@@ -34,7 +34,12 @@ async def send_chat(message: str, history: list | None = None) -> str:
     return _extract_reply_text(response)
 
 
-async def send_chat_history(history: list[dict[str, Any]], *, session_id: str | None = None) -> tuple[str, dict[str, Any]]:
+async def send_chat_history(
+    history: list[dict[str, Any]],
+    *,
+    session_id: str | None = None,
+    profile: str | None = None,
+) -> tuple[str, dict[str, Any]]:
     """Send one full chat history to Hermes and return the assistant reply."""
     # Restrict the model to this provided history only.
     system_message: dict[str, str] = {
@@ -49,6 +54,7 @@ async def send_chat_history(history: list[dict[str, Any]], *, session_id: str | 
             "messages": messages,
         },
         session_id=session_id,
+        profile=profile,
     )
 
     return _extract_reply_text(response), response
