@@ -3,7 +3,10 @@ from typing import Any
 from agent.hermes import chat_completions
 from hermpers.environment import MODEL
 
-base_system_prompt = "This message is sent from specific room send response to that room use sender bot for sending message. For formatting do not use markup, you must use HTML tags like <ul>,<li>,<a>,<b>,<pre>, specially for codes use <pre> tag"
+base_format_hint = "For formatting do not use markup, you must use HTML tags like <ul>,<li>,<a>,<b>,<pre>, specially for codes use <pre> tag"
+base_kanban_bord = "use anban board per room, if room is not created yesm create one, this would be used for collaboration"
+base_response = "This message is sent from specific room send response to that room use sender bot for sending message. "
+base_system_prompt = f"{base_response} \n {base_format_hint} \n {base_kanban_bord}"
 
 
 # ----------------------------- Hermes-version -----------------------------
