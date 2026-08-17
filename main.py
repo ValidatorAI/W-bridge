@@ -57,6 +57,7 @@ async def _process_webhook(
 	attachment_parts: list[dict[str, Any]],
 	attachment_log: str,
 	profile_name: str,
+	sender_bot: str,
 ) -> None:
 	if not raw_content and not attachment_parts:
 		logger.warning(
@@ -84,6 +85,7 @@ async def _process_webhook(
 		attachment_parts=attachment_parts,
 		attachment_log=attachment_log,
 		profile_name=profile_name,
+		sender_bot=sender_bot,
 	)
 
 	logger.info("Sending reply to: %s", target_url)
@@ -108,6 +110,9 @@ async def _process_webhook(
 @app.post("/webhook")
 async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainTextResponse:
 	token = str(request.query_params.get("token") or "").strip()
+	profile = str(request.query_params.get("profile") or "default").strip()
+	bot = str(request.query_params.get("bot") or "default").strip()
+	
 	if not token:
 		return PlainTextResponse("credential is not exists or known", status_code=200)
 
@@ -115,11 +120,13 @@ async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainT
 	if MASTER_KEY_TOKEN and token == MASTER_KEY_TOKEN:
 		selected_profile = "default"
 	else:
-		with SessionLocal() as db:
-			bot = _get_active_bot_by_token_query(db, token)
-		if bot is None:
-			return PlainTextResponse("credential is not exists or known", status_code=200)
-		selected_profile = (bot.profile_name or "default").strip() or "default"
+		#with SessionLocal() as db:
+		#	bot = _get_active_bot_by_token_query(db, token)
+		#if bot is None:
+		#	return PlainTextResponse("credential is not exists or known", status_code=200)
+		#selected profile should be get from query string
+
+		selected_profile = profile
 
 	user_name, room_path, raw_content, attachment_parts, attachment_log = await parse_request_input(request)
 
@@ -131,6 +138,7 @@ async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainT
 		attachment_parts,
 		attachment_log,
 		selected_profile,
+		bot,
 	)
 
 	return PlainTextResponse("", status_code=200)

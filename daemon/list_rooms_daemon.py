@@ -169,7 +169,12 @@ def _print_rooms() -> None:
     all_rooms: dict[int, dict] = {}
 
     for room_type in ROOM_LIST_TYPES:
-        data = _rpc_call("list_rooms", {"type": room_type, "include_archived": True})
+        args = {"type": room_type, "include_archived": True}
+        if room_type == "not_join":
+            args["type"] = "all"
+            args["only_joined"] = False
+
+        data = _rpc_call("list_rooms", args)
         rooms = data.get("rooms", [])
         if not isinstance(rooms, list):
             print(f"type={room_type}: invalid payload")
