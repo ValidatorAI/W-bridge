@@ -377,6 +377,33 @@ def _message_for_storage(raw_text: str, attachment_log: str | None) -> str:
     return text
 
 
+def _normalize_sender_bot(sender_bot: str | None) -> str:
+    value = (sender_bot or "").strip()
+    return value or "default"
+
+
+def _inject_webhook_context_message(
+    message_payload: HermesHistory,
+    room_path: str,
+    sender_bot: str | None,
+) -> HermesHistory:
+    if not message_payload:
+        return message_payload
+
+    system_message: HermesMessage = {
+        "role": "system",
+        "content": (
+            f"This message is sent from room {room_path} "
+            f"using sender bot {_normalize_sender_bot(sender_bot)}."
+        ),
+    }
+
+    if len(message_payload) == 1:
+        return [system_message, message_payload[0]]
+
+    return message_payload[:-1] + [system_message] + message_payload[-1:]
+
+
 def prepare_new_message(
     message_id: int | None,
     user_name: str,
@@ -591,6 +618,7 @@ async def generate_and_persist_bot_reply(
     attachment_parts: list[dict[str, Any]] | None = None,
     attachment_log: str | None = None,
     profile_name: str = "default",
+    sender_bot: str = "default",
 ) -> tuple[str, str | None]:
     resolved_attachment_parts = attachment_parts or []
     message_text_for_storage = _message_for_storage(raw_content, attachment_log)
@@ -613,6 +641,8 @@ async def generate_and_persist_bot_reply(
     if not message_payload:
         logger.info("Ask help.")
         return ("Help", local_session_key)
+
+    message_payload = _inject_webhook_context_message(message_payload, room_path, sender_bot)
 
     hermes_session_id: str | None = None
     if local_session_id is not None:
@@ -655,7 +685,6 @@ async def generate_and_persist_bot_reply(
                 message_id,
                 False,
             )
-
     bot_reply, bot_payload = await send_chat_history(
         message_payload,
         session_id=hermes_session_id,
