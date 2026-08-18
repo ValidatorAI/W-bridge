@@ -401,7 +401,7 @@ def _inject_webhook_context_message(
     if len(message_payload) == 1:
         return [system_message, message_payload[0]]
 
-    return [system_message] + message_payload[-1:]
+    return message_payload[:-1] + [system_message] + message_payload[-1:]
 
 
 def prepare_new_message(

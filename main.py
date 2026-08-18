@@ -110,15 +110,19 @@ async def _process_webhook(
 @app.post("/webhook")
 async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainTextResponse:
 	token = str(request.query_params.get("token") or "").strip()
-	profile = str(request.query_params.get("profile") or "default").strip()
+	profile = str(
+		request.query_params.get("selected_profile")
+		or request.query_params.get("profile")
+		or "default"
+	).strip()
 	bot = str(request.query_params.get("bot") or "default").strip()
 	
 	if not token:
 		return PlainTextResponse("credential is not exists or known", status_code=200)
 
-	selected_profile = "default"
+	selected_profile = profile
 	if MASTER_KEY_TOKEN and token == MASTER_KEY_TOKEN:
-		selected_profile = "default"
+		selected_profile = profile
 	else:
 		#with SessionLocal() as db:
 		#	bot = _get_active_bot_by_token_query(db, token)
