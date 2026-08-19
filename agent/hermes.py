@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterator
+import os
 from typing import Any
 
 import httpx
@@ -7,6 +8,7 @@ from hermpers.environment import API_SERVER_KEY, BASE_URI, HERMES_HTTP_TIMEOUT
 
 # --- Configuration ---------------------------------------------------
 REQUEST_TIMEOUT = HERMES_HTTP_TIMEOUT
+STATUS_BASE_URI = os.environ.get("STATUS_BASE_URI", "http://127.0.0.1:9119").rstrip("/")
 
 
 def _normalize_profile(profile: str | None) -> str:
@@ -18,7 +20,7 @@ def _normalize_profile(profile: str | None) -> str:
 
 def _build_url(path: str, profile: str | None = None) -> str:
     normalized_path = path if path.startswith("/") else f"/{path}"
-    if normalized_path.startswith("/p/"):
+    if normalized_path.startswith("/p/") or normalized_path == "/api/status":
         routed_path = normalized_path
     else:
         routed_path = f"/p/{_normalize_profile(profile)}{normalized_path}"
@@ -361,6 +363,23 @@ async def jobs_run(job_id: str, *, profile: str | None = None) -> dict[str, Any]
 async def model_options_get(*, refresh: bool = False, profile: str | None = None) -> dict[str, Any]:
     params = {"refresh": 1} if refresh else None
     return await _request("GET", "/api/model/options", params=params, profile=profile)
+
+
+async def api_status_summary_get(*, profile: str | None = None) -> dict[str, Any]:
+    del profile
+    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as http_client:
+        response = await http_client.get(
+            f"{STATUS_BASE_URI}/api/status",
+            headers={"Authorization": f"Bearer {API_SERVER_KEY}"},
+        )
+        response.raise_for_status()
+        status_payload = response.json()
+    return {
+        "gateway_busy": status_payload.get("gateway_busy"),
+        "active_agents": status_payload.get("active_agents"),
+        "active_sessions": status_payload.get("active_sessions"),
+        "overall": status_payload.get("overall"),
+    }
 
 async def create_new_hermes_session(
     payload: dict[str, Any] | None = None,
