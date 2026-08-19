@@ -7,7 +7,8 @@ from typing import Any, cast
 
 from agent.hermes import create_new_hermes_session
 from agent.hermes import sessions_fork
-from agent.hermes_logic import send_chat_history
+from bus.executors import enqueue_send_chat_history
+from bus.queues import prepare_send_chat_history_input
 from application.command import (
     _create_hermes_session_sync,
     _create_hermess_message_sync,
@@ -688,28 +689,34 @@ async def generate_and_persist_bot_reply(
                 message_id,
                 False,
             )
-    bot_reply, bot_payload = await send_chat_history(
+    send_chat_history_input = prepare_send_chat_history_input(
         cast(list[dict[str, Any]], message_payload),
         session_id=hermes_session_id,
         profile=profile_name,
     )
+    await enqueue_send_chat_history(send_chat_history_input)
 
-    if message_id is not None:
-        bot_reply_id = await asyncio.to_thread(_save_bot_reply_sync, message_id, bot_reply)
-        if bot_reply_id is not None:
-            if local_session_id is not None:
-                await asyncio.to_thread(_create_reply_session_sync, bot_reply_id, local_session_id)
+    # Legacy result-handling flow kept for reference. This is intentionally
+    # commented because queue-based dispatch does not guarantee immediate
+    # response payload semantics for this call path.
+    # bot_reply, bot_payload = await enqueue_send_chat_history(send_chat_history_input)
+    #
+    # if message_id is not None:
+    #     bot_reply_id = await asyncio.to_thread(_save_bot_reply_sync, message_id, bot_reply)
+    #     if bot_reply_id is not None:
+    #         if local_session_id is not None:
+    #             await asyncio.to_thread(_create_reply_session_sync, bot_reply_id, local_session_id)
+    #
+    #         hermes_bot_message_id = _extract_hermes_message_id(bot_payload) or f"bot-reply:{bot_reply_id}"
+    #         await asyncio.to_thread(
+    #             _create_hermess_message_sync,
+    #             hermes_bot_message_id,
+    #             bot_reply_id,
+    #             True,
+    #         )
+    #     else:
+    #         logger.warning("Skipping reply-session persistence because bot reply id is unavailable")
+    # else:
+    #     logger.warning("Skipping bot reply persistence because message log id is unavailable")
 
-            hermes_bot_message_id = _extract_hermes_message_id(bot_payload) or f"bot-reply:{bot_reply_id}"
-            await asyncio.to_thread(
-                _create_hermess_message_sync,
-                hermes_bot_message_id,
-                bot_reply_id,
-                True,
-            )
-        else:
-            logger.warning("Skipping reply-session persistence because bot reply id is unavailable")
-    else:
-        logger.warning("Skipping bot reply persistence because message log id is unavailable")
-
-    return (bot_reply, local_session_key)
+    return ("Queued", local_session_key)

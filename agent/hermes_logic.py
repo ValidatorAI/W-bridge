@@ -1,6 +1,7 @@
 from typing import Any
 
-from agent.hermes import chat_completions
+from bus.executors import enqueue_chat_completation
+from bus.queues import prepare_chat_completions_input
 from hermpers.environment import MODEL
 
 base_format_hint = "For formatting do not use markup, you must use HTML tags like <ul>,<li>,<a>,<b>,<pre>, specially for codes use <pre> tag"
@@ -28,12 +29,13 @@ async def send_chat(message: str, history: list | None = None) -> str:
     messages = (history or []) + [{"role": "user", "content": message}]
     messages = [{"role": "user", "content": message}]
 
-    response = await chat_completions(
+    input_data = prepare_chat_completions_input(
         {
             "model": MODEL,
             "messages": messages,
         }
     )
+    response = await enqueue_chat_completation(input_data)
 
     return _extract_reply_text(response)
 
@@ -52,7 +54,7 @@ async def send_chat_history(
     }
     messages: list[dict[str, Any]] = [system_message, *history]
 
-    response = await chat_completions(
+    input_data = prepare_chat_completions_input(
         {
             "model": MODEL,
             "messages": messages,
@@ -60,5 +62,6 @@ async def send_chat_history(
         session_id=session_id,
         profile=profile,
     )
+    response = await enqueue_chat_completation(input_data)
 
     return _extract_reply_text(response), response
