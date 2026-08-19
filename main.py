@@ -1,17 +1,19 @@
+import html
 import logging
-
+import re
+from typing import Any
+import os
+import asyncio
 import uvicorn
 import httpx
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import PlainTextResponse
+from sqlalchemy.orm import Session
 
 from application.logic import generate_and_persist_bot_reply
-from application.query import _get_active_bot_by_token_query
-from helpers.helpers import str_to_bool
-from helpers.upload import parse_request_input, post_mentioned_files_to_campfire
-from hermpers.environment import MASTER_KEY_TOKEN, PORT, RELOAD, ROOM_BASE_URL
-from schemas.typed_dict import AttachmentPart
+from helpers import str_to_bool
 from db.database import SessionLocal
+from db.models import MessageLog
 
 
 app = FastAPI()
@@ -19,12 +21,9 @@ app = FastAPI()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-RELOAD = str_to_bool(RELOAD)
-
-
-def _append_internal_session_footer(message: str, session_key: str | None) -> str:
-	session_label = session_key if session_key else "N/A"
-	return f'{message}<br/><span class="red">our internal session_key </span>{session_label}'
+ROOM_BASE_URL = os.getenv("ROOM_BASE_URL", "https://chat.nvgtrs.io").rstrip("/")
+PORT = os.getenv("PORT", "80")
+RELOAD = str_to_bool(os.getenv("RELOAD", "False"))
 
 
 async def _post_reply(target_url: str, bot_reply: str) -> None:
@@ -50,42 +49,30 @@ async def _post_reply(target_url: str, bot_reply: str) -> None:
 		logger.error("Request Error: %s", str(exc))
 
 
-async def _process_webhook(
-	user_name: str,
-	room_path: str,
-	raw_content: str,
-	attachment_parts: list[AttachmentPart],
-	attachment_log: str,
-	profile_name: str,
-	sender_bot: str,
-) -> None:
-	if not raw_content and not attachment_parts:
-		logger.warning(
-			"Empty message and no attachments. Skipping. user=%s room=%s",
-			user_name,
-			room_path or "N/A",
-		)
+
+
+async def _process_webhook(payload: dict[str, Any]) -> None:
+	raw_content = (payload.get("message") or {}).get("body", {}).get("html") or ""
+
+	if not isinstance(raw_content, str) or not raw_content.strip():
+		logger.warning("Empty message or missing html body. Skipping.")
 		return
 
-	if raw_content:
-		logger.info('[Raw HTML Received]: "%s"', raw_content)
-	if attachment_log:
-		logger.info("Attachments received: %s", attachment_log)
+	logger.info('[Raw HTML Received]: "%s"', raw_content)
 
+	room_path = (payload.get("room") or {}).get("path")
 	if not room_path:
-		logger.error("Room path missing in payload/form data")
+		logger.error("Room path missing in payload")
 		return
 
 	target_url = f"{ROOM_BASE_URL}{room_path}"
 
-	bot_reply, local_session_key = await generate_and_persist_bot_reply(
+	user_name = (payload.get("user") or {}).get("name") or "User"
+
+	bot_reply = await generate_and_persist_bot_reply(
 		user_name,
 		room_path,
 		raw_content,
-		attachment_parts=attachment_parts,
-		attachment_log=attachment_log,
-		profile_name=profile_name,
-		sender_bot=sender_bot,
 	)
 
 	logger.info("Sending reply to: %s", target_url)
@@ -95,57 +82,20 @@ async def _process_webhook(
 			"<a>/new</a>: Start a new session.<br/>"
 			"<a>/single</a>: Use single message mode.<br/>"
 			"<a>/session:name</a>: Use a named session.<br/>"
-			"<a>/fork:name</a>: Fork the active session into a new named branch.<br/>"
 			"<a>/h</a> or <a>/help</a>: Show this help message."
 		)
-		await _post_reply(target_url, _append_internal_session_footer(help_message, local_session_key))
-	#else:
-		#rendered_reply = _append_internal_session_footer(bot_reply, local_session_key)
-		#await _post_reply(target_url, rendered_reply)
-		# await post_mentioned_files_to_campfire(target_url, bot_reply)
+		await _post_reply(target_url, help_message)
+	else:
+		await _post_reply(target_url, bot_reply)
 
 	
 
 
 @app.post("/webhook")
 async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainTextResponse:
-	token = str(request.query_params.get("token") or "").strip()
-	profile = str(
-		request.query_params.get("selected_profile")
-		or request.query_params.get("profile")
-		or "default"
-	).strip()
-	bot = str(request.query_params.get("bot") or "default").strip()
-	
-	if not token:
-		return PlainTextResponse("credential is not exists or known", status_code=200)
-
-	selected_profile = profile
-	if MASTER_KEY_TOKEN and token == MASTER_KEY_TOKEN:
-		selected_profile = profile
-	else:
-		#with SessionLocal() as db:
-		#	bot = _get_active_bot_by_token_query(db, token)
-		#if bot is None:
-		#	return PlainTextResponse("credential is not exists or known", status_code=200)
-		#selected profile should be get from query string
-
-		selected_profile = profile
-
-	user_name, room_path, raw_content, attachment_parts, attachment_log = await parse_request_input(request)
-
-	background_tasks.add_task(
-		_process_webhook,
-		user_name,
-		room_path,
-		raw_content,
-		attachment_parts,
-		attachment_log,
-		selected_profile,
-		bot,
-	)
-
-	return PlainTextResponse("", status_code=200)
+	payload = await request.json()
+	background_tasks.add_task(_process_webhook, payload)
+	return PlainTextResponse("OK", status_code=200)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=int(PORT), reload=RELOAD)
