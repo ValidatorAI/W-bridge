@@ -3,7 +3,7 @@ import logging
 import random
 import re
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from agent.hermes import create_new_hermes_session
 from agent.hermes import sessions_fork
@@ -24,11 +24,11 @@ from application.command import (
     _set_active_session_for_room_sync,
 )
 from helpers.helpers import _strip_command_occurrence
+from schemas.typed_dict import AttachmentPart, HermesMessage, HermesSessionPayload
 
 
 logger = logging.getLogger(__name__)
 
-HermesMessage = dict[str, Any]
 HermesHistory = list[HermesMessage]
 
 
@@ -278,7 +278,7 @@ def _generate_session_name(room_path: str) -> str:
     return f"{_build_readable_session_name()}-{uuid.uuid4().hex[:2]}"
 
 
-def _extract_hermes_session_id(payload: dict[str, Any] | None) -> str | None:
+def _extract_hermes_session_id(payload: dict[str, Any] | HermesSessionPayload | None) -> str | None:
     if not isinstance(payload, dict):
         return None
 
@@ -302,7 +302,7 @@ def _extract_hermes_session_id(payload: dict[str, Any] | None) -> str | None:
     return None
 
 
-def _extract_hermes_message_id(payload: dict[str, Any] | None) -> str | None:
+def _extract_hermes_message_id(payload: dict[str, Any] | HermesSessionPayload | None) -> str | None:
     if not isinstance(payload, dict):
         return None
 
@@ -356,12 +356,12 @@ def _fork_parent_session_id(room_path: str) -> int | None:
     return _get_active_session_id_by_room_sync(room_path)
 
 
-def _compose_user_content(raw_text: str, attachment_parts: list[dict[str, Any]]) -> str | list[dict[str, Any]]:
+def _compose_user_content(raw_text: str, attachment_parts: list[AttachmentPart]) -> str | list[AttachmentPart]:
     text = raw_text.strip()
     if not attachment_parts:
         return text
 
-    content_parts: list[dict[str, Any]] = []
+    content_parts: list[AttachmentPart] = []
     if text:
         content_parts.append({"type": "text", "text": text})
     content_parts.extend(attachment_parts)
@@ -390,10 +390,13 @@ def _inject_webhook_context_message(
     if not message_payload:
         return message_payload
 
+    room_id_match = re.search(r"/rooms/(\d+)", room_path or "")
+    room_id_hint = f" (room id {room_id_match.group(1)})" if room_id_match else ""
+
     system_message: HermesMessage = {
         "role": "system",
         "content": (
-            f"This message is sent from room {room_path} "
+            f"This message is sent from room {room_path}{room_id_hint} "
             f"using sender bot {_normalize_sender_bot(sender_bot)}."
         ),
     }
@@ -409,7 +412,7 @@ def prepare_new_message(
     user_name: str,
     room_path: str,
     raw_content: str,
-    attachment_parts: list[dict[str, Any]],
+    attachment_parts: list[AttachmentPart],
 ) -> tuple[HermesHistory, int | None, str | None]:
     match = re.search(r"/new(?::([^\s]+))?", raw_content)
     if match is None:
@@ -446,7 +449,7 @@ def prepare_single_message(
     user_name: str,
     room_path: str,
     raw_content: str,
-    attachment_parts: list[dict[str, Any]],
+    attachment_parts: list[AttachmentPart],
 ) -> tuple[HermesHistory, int | None, str | None]:
     del message_id, user_name, room_path
     content = _strip_command_occurrence(raw_content, "/single")
@@ -458,7 +461,7 @@ def prepare_named_session_message(
     user_name: str,
     room_path: str,
     raw_content: str,
-    attachment_parts: list[dict[str, Any]],
+    attachment_parts: list[AttachmentPart],
 ) -> tuple[HermesHistory, int | None, str | None]:
     match = re.search(r"/session:([^\s]+)", raw_content)
     if match is None:
@@ -502,7 +505,7 @@ def prepare_fork_message(
     user_name: str,
     room_path: str,
     raw_content: str,
-    attachment_parts: list[dict[str, Any]],
+    attachment_parts: list[AttachmentPart],
 ) -> tuple[HermesHistory, int | None, str | None, int | None]:
     match = re.search(r"/fork:([^\s]+)", raw_content)
     if match is None:
@@ -550,7 +553,7 @@ def prepare_normal_message(
     user_name: str,
     room_path: str,
     raw_content: str,
-    attachment_parts: list[dict[str, Any]],
+    attachment_parts: list[AttachmentPart],
 ) -> tuple[HermesHistory, int | None, str | None]:
     del user_name
     session_id = _get_active_session_id_by_room_sync(room_path)
@@ -583,7 +586,7 @@ def prepare_base_message(
     user_name: str,
     room_path: str,
     raw_content: str,
-    attachment_parts: list[dict[str, Any]],
+    attachment_parts: list[AttachmentPart],
 ) -> tuple[HermesHistory, int | None, str | None, int | None, bool]:
     normalized = raw_content.strip()
 
@@ -615,7 +618,7 @@ async def generate_and_persist_bot_reply(
     user_name: str,
     room_path: str,
     raw_content: str,
-    attachment_parts: list[dict[str, Any]] | None = None,
+    attachment_parts: list[AttachmentPart] | None = None,
     attachment_log: str | None = None,
     profile_name: str = "default",
     sender_bot: str = "default",
@@ -686,7 +689,7 @@ async def generate_and_persist_bot_reply(
                 False,
             )
     bot_reply, bot_payload = await send_chat_history(
-        message_payload,
+        cast(list[dict[str, Any]], message_payload),
         session_id=hermes_session_id,
         profile=profile_name,
     )

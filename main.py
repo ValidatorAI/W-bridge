@@ -1,5 +1,4 @@
 import logging
-from typing import Any
 
 import uvicorn
 import httpx
@@ -11,6 +10,7 @@ from application.query import _get_active_bot_by_token_query
 from helpers.helpers import str_to_bool
 from helpers.upload import parse_request_input, post_mentioned_files_to_campfire
 from hermpers.environment import MASTER_KEY_TOKEN, PORT, RELOAD, ROOM_BASE_URL
+from schemas.typed_dict import AttachmentPart
 from db.database import SessionLocal
 
 
@@ -54,7 +54,7 @@ async def _process_webhook(
 	user_name: str,
 	room_path: str,
 	raw_content: str,
-	attachment_parts: list[dict[str, Any]],
+	attachment_parts: list[AttachmentPart],
 	attachment_log: str,
 	profile_name: str,
 	sender_bot: str,

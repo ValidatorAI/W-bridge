@@ -16,6 +16,7 @@ from hermpers.environment import (
 	MAX_TEXT_ATTACHMENT_CHARS,
 	MAX_UPLOAD_BYTES,
 )
+from schemas.typed_dict import AttachmentPart
 from starlette.datastructures import UploadFile
 
 
@@ -124,9 +125,9 @@ def _build_non_image_notice_part(filename: str, content_type: str, size: int) ->
 	}
 
 
-async def parse_request_input(request: Request) -> tuple[str, str, str, list[dict[str, Any]], str]:
+async def parse_request_input(request: Request) -> tuple[str, str, str, list[AttachmentPart], str]:
 	content_type = (request.headers.get("content-type") or "").lower()
-	attachment_parts: list[dict[str, Any]] = []
+	attachment_parts: list[AttachmentPart] = []
 	attachment_log_entries: list[str] = []
 
 	if "multipart/form-data" in content_type:

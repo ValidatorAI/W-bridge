@@ -11,6 +11,7 @@ from application.query import (
 	_get_session_by_key_and_room_query,
 	_get_session_message_reply_rows_query,
 )
+from schemas.typed_dict import HermesMessage
 import logging
 from datetime import datetime, timezone
 
@@ -196,11 +197,11 @@ def _get_session_key_by_id_sync(session_id: int) -> str | None:
 		db.close()
 
 
-def _get_session_history_sync(session_id: int) -> list[dict[str, str]]:
+def _get_session_history_sync(session_id: int) -> list[HermesMessage]:
 	db: Session = SessionLocal()
 	try:
 		rows = _get_session_message_reply_rows_query(db, session_id)
-		history: list[dict[str, str]] = []
+		history: list[HermesMessage] = []
 		for message_log, bot_reply in rows:
 			history.append({"role": "user", "content": message_log.raw_html})
 			if bot_reply is not None:
