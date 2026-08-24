@@ -1,4 +1,4 @@
-from bus.cron import cron, start_cron, stop_cron
+from bus.cron import cron, pooling_normal_message_cron, start_cron, stop_cron
 from bus.executors import (
     enqueue_chat_completation,
     enqueue_send_chat_history,
@@ -14,6 +14,7 @@ from bus.queues import (
 
 __all__ = [
     "cron",
+    "pooling_normal_message_cron",
     "start_cron",
     "stop_cron",
     "enqueue_chat_completation",

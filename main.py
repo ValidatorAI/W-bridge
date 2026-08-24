@@ -11,7 +11,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
 from application.logic import generate_and_persist_bot_reply
-from helpers import str_to_bool
+from helpers.helpers import str_to_bool
 from db.database import SessionLocal
 from db.models import MessageLog
 
@@ -69,24 +69,24 @@ async def _process_webhook(payload: dict[str, Any]) -> None:
 
 	user_name = (payload.get("user") or {}).get("name") or "User"
 
-	bot_reply = await generate_and_persist_bot_reply(
+	await generate_and_persist_bot_reply(
 		user_name,
 		room_path,
 		raw_content,
 	)
 
 	logger.info("Sending reply to: %s", target_url)
-	if bot_reply == "Help":
-		help_message = (
-			"Available commands:<br/>"
-			"<a>/new</a>: Start a new session.<br/>"
-			"<a>/single</a>: Use single message mode.<br/>"
-			"<a>/session:name</a>: Use a named session.<br/>"
-			"<a>/h</a> or <a>/help</a>: Show this help message."
-		)
-		await _post_reply(target_url, help_message)
-	else:
-		await _post_reply(target_url, bot_reply)
+	#if bot_reply == "Help":
+	#	help_message = (
+	#		"Available commands:<br/>"
+	#		"<a>/new</a>: Start a new session.<br/>"
+	#		"<a>/single</a>: Use single message mode.<br/>"
+	#		"<a>/session:name</a>: Use a named session.<br/>"
+	#		"<a>/h</a> or <a>/help</a>: Show this help message."
+	#	)
+	#	await _post_reply(target_url, help_message)
+	#else:
+	#	await _post_reply(target_url, bot_reply)
 
 	
 

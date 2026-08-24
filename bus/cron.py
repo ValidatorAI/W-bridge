@@ -91,6 +91,15 @@ async def cron() -> None:
                 logger.warning("Processing send_chat_history_queue despite no active agents")
                 await _process_send_chat_history_once()
 
+
+async def pooling_normal_message_cron() -> None:
+    """Secondary cron hook for normal-message polling.
+
+    This function is intentionally a no-op for now because there is no dedicated
+    normal-message queue/worker in the bus layer yet.
+    """
+    logger.debug("bus.pooling_normal_message_cron tick")
+
 async def _cron_runner() -> None:
     global _stop_event
     if _stop_event is None:
@@ -101,6 +110,7 @@ async def _cron_runner() -> None:
         while not _stop_event.is_set():
             try:
                 await cron()
+                await pooling_normal_message_cron()
             except Exception:
                 logger.exception("Unhandled error in bus cron tick")
 
