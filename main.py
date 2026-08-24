@@ -95,7 +95,7 @@ async def _process_webhook(payload: dict[str, Any]) -> None:
 async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainTextResponse:
 	payload = await request.json()
 	background_tasks.add_task(_process_webhook, payload)
-	return PlainTextResponse("OK", status_code=200)
+	return PlainTextResponse("", status_code=200)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=int(PORT), reload=RELOAD)
