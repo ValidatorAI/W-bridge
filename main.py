@@ -14,6 +14,7 @@ from application.logic import generate_and_persist_bot_reply
 from helpers.helpers import str_to_bool
 from db.database import SessionLocal
 from db.models import MessageLog
+from schemas.pydantic import SpaceEventInput
 
 
 app = FastAPI()
@@ -95,6 +96,12 @@ async def _process_webhook(payload: dict[str, Any]) -> None:
 async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainTextResponse:
 	payload = await request.json()
 	background_tasks.add_task(_process_webhook, payload)
+	return PlainTextResponse("", status_code=200)
+
+
+@app.post("/space_events")
+async def space_events(event: SpaceEventInput) -> PlainTextResponse:
+	logger.info("[Space Event Received]: %s", event.model_dump())
 	return PlainTextResponse("", status_code=200)
 
 if __name__ == "__main__":

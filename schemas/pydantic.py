@@ -28,3 +28,12 @@ class SendChatHistoryInput(SchemaModel):
     history: list[dict[str, Any]] = Field(default_factory=list)
     session_id: str | None = None
     profile: str | None = None
+
+
+class SpaceEventInput(SchemaModel):
+    id: int | str | None = None
+    event_type: str | None = None
+    event_id: str | None = None
+    group_id: str | None = None
+    event_data: dict[str, Any] | None = None
+    created_at: str | None = None
