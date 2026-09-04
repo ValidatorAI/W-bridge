@@ -1,6 +1,5 @@
-from typing import Any
-
 from ._client import request
+from .types import ActionAck
 
 
 async def send_action(
@@ -8,7 +7,7 @@ async def send_action(
     room_id: int | str,
     user_id: int | str,
     action_type: str,
-) -> dict[str, Any]:
+) -> ActionAck:
     """`action_type` is one of `typing_start`, `typing_stop` (`action` is reserved by Rails)."""
     return await request(
         "POST",

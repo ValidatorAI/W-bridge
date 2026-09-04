@@ -1,6 +1,7 @@
 from typing import Any
 
 from ._client import FileUpload, prune, request, request_bytes
+from .types import Message, MessageList
 
 
 def _body_kwargs(fields: dict[str, Any], attachment: FileUpload | None) -> dict[str, Any]:
@@ -15,7 +16,7 @@ async def list_messages(
     *,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> MessageList:
     return await request(
         "GET",
         f"/projects/{project_id}/rooms/{room_id}/messages",
@@ -30,7 +31,7 @@ async def create_message(
     *,
     body: str | None = None,
     attachment: FileUpload | None = None,
-) -> dict[str, Any]:
+) -> Message:
     """At least one of `body` or `attachment` is required."""
     return await request(
         "POST",
@@ -43,7 +44,7 @@ async def get_message(
     project_id: int | str,
     room_id: int | str,
     message_id: int | str,
-) -> dict[str, Any]:
+) -> Message:
     return await request("GET", f"/projects/{project_id}/rooms/{room_id}/messages/{message_id}")
 
 
@@ -54,7 +55,7 @@ async def update_message(
     *,
     body: str | None = None,
     attachment: FileUpload | None = None,
-) -> dict[str, Any]:
+) -> Message:
     """At least one of `body` or `attachment` is required."""
     return await request(
         "PATCH",
@@ -85,7 +86,7 @@ async def download_message_attachment(
     )
 
 
-async def get_message_by_id(message_id: int | str) -> dict[str, Any]:
+async def get_message_by_id(message_id: int | str) -> Message:
     return await request("GET", f"/messages/{message_id}")
 
 
@@ -94,7 +95,7 @@ async def update_message_by_id(
     *,
     body: str | None = None,
     attachment: FileUpload | None = None,
-) -> dict[str, Any]:
+) -> Message:
     """At least one of `body` or `attachment` is required."""
     return await request(
         "PATCH",

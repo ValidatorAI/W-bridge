@@ -1,25 +1,24 @@
-from typing import Any
-
 from ._client import prune, request
+from .types import CompanyStatusPeriod, CompanyStatusPeriodList
 
 
-async def list_company_status_periods() -> dict[str, Any]:
+async def list_company_status_periods() -> CompanyStatusPeriodList:
     return await request("GET", "/company_status_periods")
 
 
-async def get_company_status_period(period_id: int | str) -> dict[str, Any]:
+async def get_company_status_period(period_id: int | str) -> CompanyStatusPeriod:
     return await request("GET", f"/company_status_periods/{period_id}")
 
 
-async def get_current_company_status_period() -> dict[str, Any]:
+async def get_current_company_status_period() -> CompanyStatusPeriod:
     return await request("GET", "/company_status_periods/current")
 
 
-async def get_company_status_period_by_slug(slug: str) -> dict[str, Any]:
+async def get_company_status_period_by_slug(slug: str) -> CompanyStatusPeriod:
     return await request("GET", f"/company_status_periods/by_slug/{slug}")
 
 
-async def get_company_status_period_by_name(name: str) -> dict[str, Any]:
+async def get_company_status_period_by_name(name: str) -> CompanyStatusPeriod:
     return await request("GET", "/company_status_periods/by_name", params={"name": name})
 
 
@@ -31,7 +30,7 @@ async def create_company_status_period(
     starts_on: str | None = None,
     ends_on: str | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> CompanyStatusPeriod:
     return await request(
         "POST",
         "/company_status_periods",
@@ -57,7 +56,7 @@ async def update_company_status_period(
     starts_on: str | None = None,
     ends_on: str | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> CompanyStatusPeriod:
     return await request(
         "PATCH",
         f"/company_status_periods/{period_id}",

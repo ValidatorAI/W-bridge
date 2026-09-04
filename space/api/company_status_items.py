@@ -1,6 +1,5 @@
-from typing import Any
-
 from ._client import prune, request
+from .types import CompanyStatusItem, CompanyStatusItemList
 
 
 async def list_company_status_items(
@@ -15,7 +14,7 @@ async def list_company_status_items(
     source_type: str | None = None,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> CompanyStatusItemList:
     return await request(
         "GET",
         "/company_status_items",
@@ -36,13 +35,13 @@ async def list_company_status_items(
     )
 
 
-async def get_company_status_item(item_id: int | str) -> dict[str, Any]:
+async def get_company_status_item(item_id: int | str) -> CompanyStatusItem:
     return await request("GET", f"/company_status_items/{item_id}")
 
 
 async def list_company_status_items_by_period(
     company_status_period_id: int | str,
-) -> dict[str, Any]:
+) -> CompanyStatusItemList:
     return await request(
         "GET",
         "/company_status_items/by_period",
@@ -64,7 +63,7 @@ async def filter_company_status_items(
     created_at_lt: str | None = None,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> CompanyStatusItemList:
     return await request(
         "GET",
         "/company_status_items/advanced_filter",
@@ -100,7 +99,7 @@ async def create_company_status_item(
     owner_name: str | None = None,
     position: int | None = None,
     project_id: int | str | None = None,
-) -> dict[str, Any]:
+) -> CompanyStatusItem:
     return await request(
         "POST",
         "/company_status_items",
@@ -136,7 +135,7 @@ async def update_company_status_item(
     owner_name: str | None = None,
     position: int | None = None,
     project_id: int | str | None = None,
-) -> dict[str, Any]:
+) -> CompanyStatusItem:
     return await request(
         "PATCH",
         f"/company_status_items/{item_id}",

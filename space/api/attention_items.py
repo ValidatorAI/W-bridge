@@ -1,6 +1,5 @@
-from typing import Any
-
 from ._client import prune, request
+from .types import AttentionItem, AttentionItemList
 
 
 async def list_attention_items(
@@ -25,7 +24,7 @@ async def list_attention_items(
     created_at_lt: str | None = None,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> AttentionItemList:
     return await request(
         "GET",
         "/attention_items",
@@ -56,7 +55,7 @@ async def list_attention_items(
     )
 
 
-async def get_attention_item(attention_item_id: int | str) -> dict[str, Any]:
+async def get_attention_item(attention_item_id: int | str) -> AttentionItem:
     return await request("GET", f"/attention_items/{attention_item_id}")
 
 
@@ -77,7 +76,7 @@ async def create_attention_item(
     target_type: str | None = None,
     action_label: str | None = None,
     ai_confirm: bool | None = None,
-) -> dict[str, Any]:
+) -> AttentionItem:
     return await request(
         "POST",
         "/attention_items",
@@ -121,7 +120,7 @@ async def update_attention_item(
     target_type: str | None = None,
     action_label: str | None = None,
     ai_confirm: bool | None = None,
-) -> dict[str, Any]:
+) -> AttentionItem:
     return await request(
         "PATCH",
         f"/attention_items/{attention_item_id}",

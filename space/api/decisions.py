@@ -1,6 +1,5 @@
-from typing import Any
-
 from ._client import prune, request
+from .types import ApprovalRequest
 
 
 async def create_decision(
@@ -11,7 +10,7 @@ async def create_decision(
     decision: str,
     *,
     note: str | None = None,
-) -> dict[str, Any]:
+) -> ApprovalRequest:
     """`decision` is one of `approve`, `confirm`, `deny`, `cancel`."""
     return await request(
         "POST",
