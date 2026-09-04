@@ -1,5 +1,5 @@
+from ..schema import CompanyStatusPeriod, CompanyStatusPeriodList
 from ._client import prune, request
-from .types import CompanyStatusPeriod, CompanyStatusPeriodList
 
 
 async def list_company_status_periods() -> CompanyStatusPeriodList:

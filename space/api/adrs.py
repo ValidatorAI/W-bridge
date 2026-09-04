@@ -1,5 +1,4 @@
-from typing import Any
-
+from ..schema import Adr, AdrList
 from ._client import prune, request
 
 
@@ -9,7 +8,7 @@ async def list_adrs(
     active: bool | None = None,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> AdrList:
     return await request(
         "GET",
         f"/projects/{project_id}/adrs",
@@ -17,7 +16,7 @@ async def list_adrs(
     )
 
 
-async def get_adr(project_id: int | str, adr_id: int | str) -> dict[str, Any]:
+async def get_adr(project_id: int | str, adr_id: int | str) -> Adr:
     return await request("GET", f"/projects/{project_id}/adrs/{adr_id}")
 
 
@@ -31,7 +30,7 @@ async def create_adr(
     file_path: str | None = None,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> Adr:
     """`status` is one of `proposed`, `accepted`, `deprecated`, `superseded`."""
     return await request(
         "POST",
@@ -61,7 +60,7 @@ async def update_adr(
     file_path: str | None = None,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> Adr:
     return await request(
         "PATCH",
         f"/projects/{project_id}/adrs/{adr_id}",

@@ -1,5 +1,6 @@
 from typing import Any
 
+from ..schema import ObsidianNote, ObsidianNoteList
 from ._client import FileUpload, prune, request
 
 
@@ -15,7 +16,7 @@ async def list_obsidian_notes(
     active: bool | None = None,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> ObsidianNoteList:
     return await request(
         "GET",
         f"/projects/{project_id}/obsidian_notes",
@@ -23,7 +24,7 @@ async def list_obsidian_notes(
     )
 
 
-async def get_obsidian_note(project_id: int | str, note_id: int | str) -> dict[str, Any]:
+async def get_obsidian_note(project_id: int | str, note_id: int | str) -> ObsidianNote:
     return await request("GET", f"/projects/{project_id}/obsidian_notes/{note_id}")
 
 
@@ -38,7 +39,7 @@ async def create_obsidian_note(
     active: bool | None = None,
     position: int | None = None,
     file: FileUpload | None = None,
-) -> dict[str, Any]:
+) -> ObsidianNote:
     """`html_source_type` is one of `internal_file`, `external_url`."""
     return await request(
         "POST",
@@ -70,7 +71,7 @@ async def update_obsidian_note(
     active: bool | None = None,
     position: int | None = None,
     file: FileUpload | None = None,
-) -> dict[str, Any]:
+) -> ObsidianNote:
     return await request(
         "PATCH",
         f"/projects/{project_id}/obsidian_notes/{note_id}",

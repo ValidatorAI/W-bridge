@@ -1,5 +1,4 @@
-from typing import Any
-
+from ..schema import ExternalAsset, ExternalAssetList
 from ._client import prune, request
 
 
@@ -9,7 +8,7 @@ async def list_external_assets(
     active: bool | None = None,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> ExternalAssetList:
     return await request(
         "GET",
         f"/projects/{project_id}/external_assets",
@@ -17,7 +16,7 @@ async def list_external_assets(
     )
 
 
-async def get_external_asset(project_id: int | str, asset_id: int | str) -> dict[str, Any]:
+async def get_external_asset(project_id: int | str, asset_id: int | str) -> ExternalAsset:
     return await request("GET", f"/projects/{project_id}/external_assets/{asset_id}")
 
 
@@ -32,7 +31,7 @@ async def create_external_asset(
     meta_text: str | None = None,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> ExternalAsset:
     """`source_type` is one of `internal_file`, `external_url`."""
     return await request(
         "POST",
@@ -64,7 +63,7 @@ async def update_external_asset(
     meta_text: str | None = None,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> ExternalAsset:
     return await request(
         "PATCH",
         f"/projects/{project_id}/external_assets/{asset_id}",

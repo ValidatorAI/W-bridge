@@ -1,5 +1,4 @@
-from typing import Any
-
+from ..schema import KnowledgeActivity, KnowledgeActivityList
 from ._client import prune, request
 
 
@@ -9,7 +8,7 @@ async def list_knowledge_activities(
     active: bool | None = None,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> KnowledgeActivityList:
     return await request(
         "GET",
         f"/projects/{project_id}/knowledge_activities",
@@ -17,7 +16,9 @@ async def list_knowledge_activities(
     )
 
 
-async def get_knowledge_activity(project_id: int | str, activity_id: int | str) -> dict[str, Any]:
+async def get_knowledge_activity(
+    project_id: int | str, activity_id: int | str
+) -> KnowledgeActivity:
     return await request("GET", f"/projects/{project_id}/knowledge_activities/{activity_id}")
 
 
@@ -31,7 +32,7 @@ async def create_knowledge_activity(
     target_url: str | None = None,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> KnowledgeActivity:
     return await request(
         "POST",
         f"/projects/{project_id}/knowledge_activities",
@@ -60,7 +61,7 @@ async def update_knowledge_activity(
     target_url: str | None = None,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> KnowledgeActivity:
     return await request(
         "PATCH",
         f"/projects/{project_id}/knowledge_activities/{activity_id}",

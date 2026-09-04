@@ -1,5 +1,11 @@
-from typing import Any
-
+from ..schema import (
+    AllHandsActionItem,
+    AllHandsActionItemList,
+    AllHandsDecision,
+    AllHandsDecisionList,
+    AllHandsTakeaway,
+    AllHandsTakeawayList,
+)
 from ._client import prune, request
 
 
@@ -9,7 +15,7 @@ async def list_all_hands_takeaways(
     active: bool | None = None,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> AllHandsTakeawayList:
     return await request(
         "GET",
         f"/projects/{project_id}/project_all_hands_takeaways",
@@ -17,7 +23,9 @@ async def list_all_hands_takeaways(
     )
 
 
-async def get_all_hands_takeaway(project_id: int | str, takeaway_id: int | str) -> dict[str, Any]:
+async def get_all_hands_takeaway(
+    project_id: int | str, takeaway_id: int | str
+) -> AllHandsTakeaway:
     return await request("GET", f"/projects/{project_id}/project_all_hands_takeaways/{takeaway_id}")
 
 
@@ -28,7 +36,7 @@ async def create_all_hands_takeaway(
     *,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> AllHandsTakeaway:
     return await request(
         "POST",
         f"/projects/{project_id}/project_all_hands_takeaways",
@@ -51,7 +59,7 @@ async def update_all_hands_takeaway(
     content: str | None = None,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> AllHandsTakeaway:
     return await request(
         "PATCH",
         f"/projects/{project_id}/project_all_hands_takeaways/{takeaway_id}",
@@ -78,7 +86,7 @@ async def list_all_hands_decisions(
     active: bool | None = None,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> AllHandsDecisionList:
     return await request(
         "GET",
         f"/projects/{project_id}/project_all_hands_decisions",
@@ -86,7 +94,9 @@ async def list_all_hands_decisions(
     )
 
 
-async def get_all_hands_decision(project_id: int | str, decision_id: int | str) -> dict[str, Any]:
+async def get_all_hands_decision(
+    project_id: int | str, decision_id: int | str
+) -> AllHandsDecision:
     return await request("GET", f"/projects/{project_id}/project_all_hands_decisions/{decision_id}")
 
 
@@ -99,7 +109,7 @@ async def create_all_hands_decision(
     badge: str | None = None,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> AllHandsDecision:
     return await request(
         "POST",
         f"/projects/{project_id}/project_all_hands_decisions",
@@ -126,7 +136,7 @@ async def update_all_hands_decision(
     badge: str | None = None,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> AllHandsDecision:
     return await request(
         "PATCH",
         f"/projects/{project_id}/project_all_hands_decisions/{decision_id}",
@@ -155,7 +165,7 @@ async def list_all_hands_action_items(
     active: bool | None = None,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> AllHandsActionItemList:
     return await request(
         "GET",
         f"/projects/{project_id}/project_all_hands_action_items",
@@ -165,7 +175,7 @@ async def list_all_hands_action_items(
 
 async def get_all_hands_action_item(
     project_id: int | str, action_item_id: int | str
-) -> dict[str, Any]:
+) -> AllHandsActionItem:
     return await request(
         "GET", f"/projects/{project_id}/project_all_hands_action_items/{action_item_id}"
     )
@@ -181,7 +191,7 @@ async def create_all_hands_action_item(
     completed_at: str | None = None,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> AllHandsActionItem:
     return await request(
         "POST",
         f"/projects/{project_id}/project_all_hands_action_items",
@@ -210,7 +220,7 @@ async def update_all_hands_action_item(
     completed_at: str | None = None,
     active: bool | None = None,
     position: int | None = None,
-) -> dict[str, Any]:
+) -> AllHandsActionItem:
     return await request(
         "PATCH",
         f"/projects/{project_id}/project_all_hands_action_items/{action_item_id}",

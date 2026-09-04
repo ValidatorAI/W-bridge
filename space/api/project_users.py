@@ -1,5 +1,4 @@
-from typing import Any
-
+from ..schema import ProjectUser, ProjectUserList
 from ._client import prune, request
 
 
@@ -8,7 +7,7 @@ async def list_project_users(
     *,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> ProjectUserList:
     return await request(
         "GET",
         f"/projects/{project_id}/users",
@@ -16,5 +15,5 @@ async def list_project_users(
     )
 
 
-async def get_project_user(project_id: int | str, user_id: int | str) -> dict[str, Any]:
+async def get_project_user(project_id: int | str, user_id: int | str) -> ProjectUser:
     return await request("GET", f"/projects/{project_id}/users/{user_id}")

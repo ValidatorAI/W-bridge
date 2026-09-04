@@ -1,5 +1,5 @@
+from ..schema import AttentionItem, AttentionItemList
 from ._client import prune, request
-from .types import AttentionItem, AttentionItemList
 
 
 async def list_attention_items(

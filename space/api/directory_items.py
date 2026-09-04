@@ -1,5 +1,6 @@
 from typing import Any
 
+from ..schema import DirectoryItem, DirectoryItemList
 from ._client import FileUpload, prune, request
 
 
@@ -15,7 +16,7 @@ async def list_directory_items(
     active: bool | None = None,
     page: int | None = None,
     per_page: int | None = None,
-) -> dict[str, Any]:
+) -> DirectoryItemList:
     return await request(
         "GET",
         f"/projects/{project_id}/directory_items",
@@ -23,7 +24,7 @@ async def list_directory_items(
     )
 
 
-async def get_directory_item(project_id: int | str, item_id: int | str) -> dict[str, Any]:
+async def get_directory_item(project_id: int | str, item_id: int | str) -> DirectoryItem:
     return await request("GET", f"/projects/{project_id}/directory_items/{item_id}")
 
 
@@ -38,7 +39,7 @@ async def create_directory_item(
     active: bool | None = None,
     position: int | None = None,
     file: FileUpload | None = None,
-) -> dict[str, Any]:
+) -> DirectoryItem:
     """`item_type` is one of `file`, `directory`; `file` is saved under the project storage dir."""
     return await request(
         "POST",
@@ -70,7 +71,7 @@ async def update_directory_item(
     active: bool | None = None,
     position: int | None = None,
     file: FileUpload | None = None,
-) -> dict[str, Any]:
+) -> DirectoryItem:
     return await request(
         "PATCH",
         f"/projects/{project_id}/directory_items/{item_id}",

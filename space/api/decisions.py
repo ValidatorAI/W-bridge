@@ -1,5 +1,5 @@
+from ..schema import ApprovalRequest
 from ._client import prune, request
-from .types import ApprovalRequest
 
 
 async def create_decision(

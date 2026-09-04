@@ -1,5 +1,5 @@
+from ..schema import Project
 from ._client import request
-from .types import Project
 
 
 async def list_projects() -> list[Project]:

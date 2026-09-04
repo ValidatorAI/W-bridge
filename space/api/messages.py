@@ -1,7 +1,7 @@
 from typing import Any
 
+from ..schema import Message, MessageList
 from ._client import FileUpload, prune, request, request_bytes
-from .types import Message, MessageList
 
 
 def _body_kwargs(fields: dict[str, Any], attachment: FileUpload | None) -> dict[str, Any]:

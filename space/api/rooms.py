@@ -1,5 +1,5 @@
+from ..schema import Room
 from ._client import request
-from .types import Room
 
 
 async def list_rooms(project_id: int | str) -> list[Room]:

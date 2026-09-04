@@ -1,5 +1,5 @@
+from ..schema import ActionAck
 from ._client import request
-from .types import ActionAck
 
 
 async def send_action(
