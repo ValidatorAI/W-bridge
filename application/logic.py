@@ -20,8 +20,6 @@ from application.command import (
     _get_session_key_by_id_sync,
     _get_session_history_sync,
     _get_session_id_by_key_and_room_sync,
-    _save_bot_reply_sync,
-    _save_message_log_sync,
     _set_active_session_for_room_sync,
 )
 from helpers.helpers import _strip_command_occurrence
@@ -625,14 +623,7 @@ async def generate_and_persist_bot_reply(
     sender_bot: str = "default",
 ) -> tuple[str, str | None]:
     resolved_attachment_parts = attachment_parts or []
-    message_text_for_storage = _message_for_storage(raw_content, attachment_log)
-
-    message_id = await asyncio.to_thread(
-        _save_message_log_sync,
-        user_name,
-        room_path,
-        message_text_for_storage,
-    )
+    message_id = None
 
     message_payload, local_session_id, local_session_key, fork_parent_local_session_id, should_fork_hermes = prepare_base_message(
         message_id,
@@ -695,28 +686,5 @@ async def generate_and_persist_bot_reply(
         profile=profile_name,
     )
     await enqueue_send_chat_history(send_chat_history_input)
-
-    # Legacy result-handling flow kept for reference. This is intentionally
-    # commented because queue-based dispatch does not guarantee immediate
-    # response payload semantics for this call path.
-    # bot_reply, bot_payload = await enqueue_send_chat_history(send_chat_history_input)
-    #
-    # if message_id is not None:
-    #     bot_reply_id = await asyncio.to_thread(_save_bot_reply_sync, message_id, bot_reply)
-    #     if bot_reply_id is not None:
-    #         if local_session_id is not None:
-    #             await asyncio.to_thread(_create_reply_session_sync, bot_reply_id, local_session_id)
-    #
-    #         hermes_bot_message_id = _extract_hermes_message_id(bot_payload) or f"bot-reply:{bot_reply_id}"
-    #         await asyncio.to_thread(
-    #             _create_hermess_message_sync,
-    #             hermes_bot_message_id,
-    #             bot_reply_id,
-    #             True,
-    #         )
-    #     else:
-    #         logger.warning("Skipping reply-session persistence because bot reply id is unavailable")
-    # else:
-    #     logger.warning("Skipping bot reply persistence because message log id is unavailable")
 
     return ("Queued", local_session_key)
