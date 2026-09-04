@@ -6,7 +6,7 @@ import os
 import asyncio
 import uvicorn
 import httpx
-from fastapi import BackgroundTasks, FastAPI, Request
+from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 ROOM_BASE_URL = os.getenv("ROOM_BASE_URL", "https://chat.nvgtrs.io").rstrip("/")
 PORT = os.getenv("PORT", "80")
 RELOAD = str_to_bool(os.getenv("RELOAD", "False"))
+OUTPUT_EVENTS_TOKEN = os.getenv("OUTPUT_EVENTS_TOKEN")
 
 
 async def _post_reply(target_url: str, bot_reply: str) -> None:
@@ -100,7 +101,15 @@ async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainT
 
 
 @app.post("/space_events")
-async def space_events(event: SpaceEventInput) -> PlainTextResponse:
+async def space_events(
+	event: SpaceEventInput,
+	authorization: str | None = Header(default=None),
+) -> PlainTextResponse:
+	expected = f"Bearer {OUTPUT_EVENTS_TOKEN}"
+
+	if not OUTPUT_EVENTS_TOKEN or authorization != expected:
+		raise HTTPException(status_code=401, detail="Invalid token")
+
 	logger.info("[Space Event Received]: %s", event.model_dump())
 	return PlainTextResponse("", status_code=200)
 
