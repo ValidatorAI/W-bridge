@@ -15,6 +15,10 @@ ROOM_BASE_URL = os.environ.get("ROOM_BASE_URL", "https://chat.nvgtrs.io").rstrip
 PORT = os.environ.get("PORT", "80")
 RELOAD = os.environ.get("RELOAD", "False")
 
+OUTPUT_BASE_URL = os.environ.get("OUTPUT_BASE_URL", "http://localhost:3000").rstrip("/")
+OUTPUT_EVENTS_TOKEN = os.environ.get("OUTPUT_EVENTS_TOKEN", "")
+OUTPUT_HTTP_TIMEOUT = float(os.environ.get("OUTPUT_HTTP_TIMEOUT", "60"))
+
 MAX_UPLOAD_BYTES = int(os.environ.get("MAX_UPLOAD_BYTES", str(5 * 1024 * 1024)))
 MAX_TEXT_ATTACHMENT_CHARS = int(os.environ.get("MAX_TEXT_ATTACHMENT_CHARS", "12000"))
 MAX_REPLY_FILE_UPLOADS = int(os.environ.get("MAX_REPLY_FILE_UPLOADS", "5"))
