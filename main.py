@@ -7,9 +7,10 @@ import asyncio
 import uvicorn
 import httpx
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from sqlalchemy.orm import Session
 from helpers.helpers import str_to_bool
+from mcp.server import handle_mcp_request
 from schemas.pydantic import SpaceEventInput
 
 
@@ -44,6 +45,27 @@ async def space_events(
 
 	logger.info("[Space Event Received]: %s", event.model_dump())
 	return PlainTextResponse("", status_code=200)
+
+
+@app.post("/mcp")
+async def mcp_endpoint(request: Request) -> Response:
+	try:
+		payload = await request.json()
+	except Exception:
+		return JSONResponse(
+			status_code=400,
+			content={
+				"jsonrpc": "2.0",
+				"id": None,
+				"error": {"code": -32700, "message": "Parse error: invalid JSON"},
+			},
+		)
+
+	response_data = handle_mcp_request(payload)
+	if response_data is None:
+		return Response(status_code=204)
+	return JSONResponse(content=response_data)
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=int(PORT), reload=RELOAD)
