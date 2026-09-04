@@ -2,7 +2,7 @@ import os
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-from hermpers.environment import DATABASE_URL
+from helpers.environment import DATABASE_URL
 
 if DATABASE_URL.startswith("sqlite:///"):
 	sqlite_file_path = DATABASE_URL.replace("sqlite:///", "", 1)

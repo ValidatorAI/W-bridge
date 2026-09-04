@@ -9,11 +9,7 @@ import httpx
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
-
-from application.logic import generate_and_persist_bot_reply
 from helpers.helpers import str_to_bool
-from db.database import SessionLocal
-from db.models import MessageLog
 from schemas.pydantic import SpaceEventInput
 
 
@@ -27,77 +23,13 @@ PORT = os.getenv("PORT", "80")
 RELOAD = str_to_bool(os.getenv("RELOAD", "False"))
 OUTPUT_EVENTS_TOKEN = os.getenv("OUTPUT_EVENTS_TOKEN")
 
-
-async def _post_reply(target_url: str, bot_reply: str) -> None:
-	try:
-		# sanitize bot reply & parapere it for campfire
-		bot_reply = bot_reply.replace("%", " percent")
-		async with httpx.AsyncClient(timeout=20.0) as client:
-			response = await client.post(
-				target_url,
-				content=bot_reply,
-				headers={"Content-Type": "text/html; charset=utf-8"},
-			)
-			response.raise_for_status()
-		logger.info("Posted reply to Campfire successfully!")
-	except httpx.HTTPStatusError as exc:
-		logger.error(
-			"Post Error: %s %s | url=%s",
-			exc.response.status_code,
-			exc.response.text,
-			str(exc.request.url),
-		)
-	except httpx.RequestError as exc:
-		logger.error("Request Error: %s", str(exc))
-
-
-
-
-async def _process_webhook(payload: dict[str, Any]) -> None:
-	raw_content = (payload.get("message") or {}).get("body", {}).get("html") or ""
-
-	if not isinstance(raw_content, str) or not raw_content.strip():
-		logger.warning("Empty message or missing html body. Skipping.")
-		return
-
-	logger.info('[Raw HTML Received]: "%s"', raw_content)
-
-	room_path = (payload.get("room") or {}).get("path")
-	if not room_path:
-		logger.error("Room path missing in payload")
-		return
-
-	target_url = f"{ROOM_BASE_URL}{room_path}"
-
-	user_name = (payload.get("user") or {}).get("name") or "User"
-
-	await generate_and_persist_bot_reply(
-		user_name,
-		room_path,
-		raw_content,
-	)
-
-	logger.info("Sending reply to: %s", target_url)
-	#if bot_reply == "Help":
-	#	help_message = (
-	#		"Available commands:<br/>"
-	#		"<a>/new</a>: Start a new session.<br/>"
-	#		"<a>/single</a>: Use single message mode.<br/>"
-	#		"<a>/session:name</a>: Use a named session.<br/>"
-	#		"<a>/h</a> or <a>/help</a>: Show this help message."
-	#	)
-	#	await _post_reply(target_url, help_message)
-	#else:
-	#	await _post_reply(target_url, bot_reply)
-
-	
-
-
+"""
 @app.post("/webhook")
 async def webhook(request: Request, background_tasks: BackgroundTasks) -> PlainTextResponse:
 	payload = await request.json()
 	background_tasks.add_task(_process_webhook, payload)
 	return PlainTextResponse("", status_code=200)
+"""
 
 
 @app.post("/space_events")

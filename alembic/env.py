@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from db.database import Base
 from db import models  # noqa: F401
-from hermpers.environment import DATABASE_URL
+from helpers.environment import DATABASE_URL
 
 config = context.config
 

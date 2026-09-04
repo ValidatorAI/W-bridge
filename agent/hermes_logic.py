@@ -2,7 +2,7 @@ from typing import Any
 
 from bus.executors import enqueue_chat_completation
 from bus.queues import prepare_chat_completions_input
-from hermpers.environment import MODEL
+from helpers.environment import MODEL
 
 base_format_hint = "For formatting do not use markup, you must use HTML tags like <ul>,<li>,<a>,<b>,<pre>, specially for codes use <pre> tag"
 base_kanban_bord = "use anban board per room, if room is not created yesm create one, this would be used for collaboration"

@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx
 from fastapi import Request
-from hermpers.environment import (
+from helpers.environment import (
 	MAX_REPLY_FILE_UPLOAD_BYTES,
 	MAX_REPLY_FILE_UPLOADS,
 	MAX_TEXT_ATTACHMENT_CHARS,

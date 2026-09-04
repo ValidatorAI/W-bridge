@@ -3,7 +3,7 @@ import os
 from typing import Any
 
 import httpx
-from hermpers.environment import API_SERVER_KEY, BASE_URI, HERMES_HTTP_TIMEOUT
+from helpers.environment import API_SERVER_KEY, BASE_URI, HERMES_HTTP_TIMEOUT
 
 
 # --- Configuration ---------------------------------------------------

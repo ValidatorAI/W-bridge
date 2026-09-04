@@ -3,7 +3,7 @@ from typing import Any, BinaryIO
 
 import httpx
 
-from hermpers.environment import (
+from helpers.environment import (
     OUTPUT_BASE_URL,
     OUTPUT_EVENTS_TOKEN,
     OUTPUT_HTTP_TIMEOUT,
