@@ -1,7 +1,17 @@
 from sqlalchemy import inspect
 
 from db.database import Base
-from db.models import SpaceEvent
+from db.models import Bot, SpaceEvent
+
+
+def test_bot_model_has_no_token_column():
+    mapper = inspect(Bot)
+
+    assert mapper.primary_key[0].name == "id"
+    assert "name" in mapper.columns
+    assert "profile_name" in mapper.columns
+    assert "active" in mapper.columns
+    assert "token" not in mapper.columns
 
 
 def test_space_event_model_has_internal_primary_key_and_json_field():
