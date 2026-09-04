@@ -1,16 +1,15 @@
 from pydantic import BaseModel, ConfigDict, Field
+from typing import Any
 
 
 class SchemaModel(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
-class WebhookQueryParams(SchemaModel):
-    token: str | None = None
-    selected_profile: str | None = Field(default=None, alias="selected_profile")
-    profile: str | None = None
-    bot: str | None = None
-
-
-class WebhookResponse(SchemaModel):
-    message: str = ""
+class SpaceEventInput(SchemaModel):
+    id: int | str | None = None
+    event_type: str | None = None
+    event_id: int | str | None = None
+    group_id: str | None = None
+    event_data: dict[str, Any] | None = None
+    created_at: str | None = None
