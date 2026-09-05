@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from mcp.tools import call_tool, list_tools
+from mcp.core import call_tool, list_tools
 
 logger = logging.getLogger(__name__)
 

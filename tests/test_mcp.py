@@ -2,7 +2,7 @@ import unittest
 from fastapi.testclient import TestClient
 
 from main import app
-from mcp.tools import call_tool, hello, list_tools
+from mcp.core import call_tool, hello, list_tools
 
 
 class TestMCP(unittest.TestCase):
@@ -81,7 +81,85 @@ class TestMCP(unittest.TestCase):
         self.assertEqual(data["jsonrpc"], "2.0")
         self.assertEqual(data["id"], 3)
         tools = data["result"]["tools"]
-        self.assertTrue(any(tool["name"] == "hello" for tool in tools))
+        tool_names = {tool["name"] for tool in tools}
+        expected_tools = [
+            "hello",
+            # Company Home
+            "decisions_waiting",
+            "blockers",
+            "outcomes_review",
+            "mentions",
+            "material_changes",
+            "ai_confirm",
+            "knowledge_proposals",
+            # Company Status
+            "company_status_period",
+            "priorities",
+            "progress",
+            "risks",
+            "dependencies",
+            "changes",
+            "decisions",
+            "learnings",
+            # Project Overview
+            "project_milestones",
+            # Project Status
+            "project_bottlenecks",
+            "project_todos",
+            "project_knowledge_items",
+            # Project All Hands
+            "ProjectAllHandsTakeaway",
+            "ProjectAllHandsActionItem",
+            "ProjectAllHandsDecision",
+            # Project Knowledge
+            "external_knowledge_assets",
+            "knowledge_activity_log",
+            "tree_based_project_directory_data",
+            "knowledge_summary_items",
+            "ProjectObsidianNote",
+            # Room Tools
+            "add_message",
+            "add_loading_message",
+            "edit_loading_message",
+            "delete_loading_message",
+            "add_action_message",
+            "add_decision_message",
+        ]
+        for name in expected_tools:
+            self.assertIn(name, tool_names)
+
+    def test_mcp_tools_call_categories(self):
+        sample_tools = [
+            "decisions_waiting",
+            "blockers",
+            "company_status_period",
+            "priorities",
+            "project_milestones",
+            "project_bottlenecks",
+            "ProjectAllHandsTakeaway",
+            "external_knowledge_assets",
+            "ProjectObsidianNote",
+            "add_message",
+            "add_loading_message",
+            "edit_loading_message",
+            "delete_loading_message",
+            "add_action_message",
+            "add_decision_message",
+        ]
+        for name in sample_tools:
+            response = self.client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 100,
+                    "method": "tools/call",
+                    "params": {"name": name, "arguments": {}},
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertFalse(data["result"]["isError"])
+            self.assertIn("Dummy result", data["result"]["content"][0]["text"])
 
     def test_mcp_tools_call_hello(self):
         response = self.client.post(

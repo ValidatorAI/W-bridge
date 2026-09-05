@@ -22,7 +22,7 @@ required mcp tools
 7. 
 
 
-#### company home
+### company home
 
 decisions_waiting
 blockers
@@ -46,12 +46,12 @@ learnings
 
 ### project overview
 
-project milesone sections is rendered statically
+project milesones
 
 ### project status
 
-project_bottlenecks -> need api
-project_todos -> need api
+project_bottlenecks
+project_todos
 project_knowledge_items
 
 ### project all hands
@@ -62,9 +62,8 @@ ProjectAllHandsDecision
 
 ### project knowledge
 
-project notes
 external knowledge assets
-ADRs -> not clear need mcp or not
 knowledge activity log
 tree-based project directory data
 knowledge summary items
+ProjectObsidianNote
