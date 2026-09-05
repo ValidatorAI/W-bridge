@@ -354,6 +354,63 @@ class ObsidianNoteList(TypedDict, total=False):
     obsidian_notes: list[ObsidianNote]
 
 
+class ProjectBottleneck(TypedDict, total=False):
+    id: int
+    project_id: int
+    title: str
+    description: str | None
+    severity: str
+    resolved_at: str | None
+    position: int
+    created_at: str
+    updated_at: str
+
+
+class ProjectBottleneckList(TypedDict, total=False):
+    count: int
+    page: int
+    per_page: int
+    project_bottlenecks: list[ProjectBottleneck]
+
+
+class ProjectTodo(TypedDict, total=False):
+    id: int
+    project_id: int
+    title: str
+    meta_text: str | None
+    completed: bool
+    completed_at: str | None
+    position: int
+    created_at: str
+    updated_at: str
+
+
+class ProjectTodoList(TypedDict, total=False):
+    count: int
+    page: int
+    per_page: int
+    project_todos: list[ProjectTodo]
+
+
+class ProjectMilestone(TypedDict, total=False):
+    id: int
+    project_id: int
+    title: str
+    description: str | None
+    icon: str | None
+    active: bool
+    position: int
+    created_at: str
+    updated_at: str
+
+
+class ProjectMilestoneList(TypedDict, total=False):
+    count: int
+    page: int
+    per_page: int
+    project_milestones: list[ProjectMilestone]
+
+
 __all__ = [
     "ActionAck",
     "Adr",
@@ -384,6 +441,12 @@ __all__ = [
     "ObsidianNote",
     "ObsidianNoteList",
     "Project",
+    "ProjectBottleneck",
+    "ProjectBottleneckList",
+    "ProjectMilestone",
+    "ProjectMilestoneList",
+    "ProjectTodo",
+    "ProjectTodoList",
     "ProjectUser",
     "ProjectUserList",
     "Room",

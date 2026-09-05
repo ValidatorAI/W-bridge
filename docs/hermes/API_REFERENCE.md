@@ -109,6 +109,21 @@ update to connected web clients in that room, in addition to the JSON response.
 | POST | `/api/projects/:project_id/obsidian_notes` | Create an obsidian note (supports multipart file upload) | No |
 | PATCH/PUT | `/api/projects/:project_id/obsidian_notes/:id` | Update an obsidian note (supports multipart file upload) | No |
 | DELETE | `/api/projects/:project_id/obsidian_notes/:id` | Delete an obsidian note (cleans up internal file on disk) | No |
+| GET | `/api/projects/:project_id/project_bottlenecks` | List project bottlenecks (filterable by `created_at` range, `active`, `severity`, & paginated) | No |
+| GET | `/api/projects/:project_id/project_bottlenecks/:id` | Get a single project bottleneck | No |
+| POST | `/api/projects/:project_id/project_bottlenecks` | Create a project bottleneck | No |
+| PATCH/PUT | `/api/projects/:project_id/project_bottlenecks/:id` | Update a project bottleneck | No |
+| DELETE | `/api/projects/:project_id/project_bottlenecks/:id` | Delete a project bottleneck | No |
+| GET | `/api/projects/:project_id/project_todos` | List project todos (filterable by `created_at` range, `completed`/`active`, & paginated) | No |
+| GET | `/api/projects/:project_id/project_todos/:id` | Get a single project todo | No |
+| POST | `/api/projects/:project_id/project_todos` | Create a project todo | No |
+| PATCH/PUT | `/api/projects/:project_id/project_todos/:id` | Update a project todo | No |
+| DELETE | `/api/projects/:project_id/project_todos/:id` | Delete a project todo | No |
+| GET | `/api/projects/:project_id/project_milestones` | List project milestones (filterable by `created_at` range, `active`, & paginated) | No |
+| GET | `/api/projects/:project_id/project_milestones/:id` | Get a single project milestone | No |
+| POST | `/api/projects/:project_id/project_milestones` | Create a project milestone | No |
+| PATCH/PUT | `/api/projects/:project_id/project_milestones/:id` | Update a project milestone | No |
+| DELETE | `/api/projects/:project_id/project_milestones/:id` | Delete a project milestone | No |
 
 Note: message ids are globally unique (not scoped per room), so the flat
 `/api/messages/:id` routes work regardless of which room the message belongs to.
@@ -925,6 +940,202 @@ Deletes an obsidian note from the database and cleans up the associated internal
 
 ---
 
+## Project Bottlenecks
+
+### `GET /api/projects/:project_id/project_bottlenecks`
+
+Lists bottlenecks for a project. Supports date range filtering on `created_at`, active/resolved filtering, severity filtering, and pagination.
+
+**Query Parameters:**
+- Date range:
+  - `created_at_gt` / `from` / `starts_at` / `start_date`: items created after date/time
+  - `created_at_gte`: items created on or after date/time
+  - `created_at_lt` / `to` / `ends_at` / `end_date`: items created before date/time
+  - `created_at_lte`: items created on or before date/time
+- Active/Resolved status:
+  - `active=true` (unresolved bottlenecks, `resolved_at` is null)
+  - `active=false` (resolved bottlenecks)
+- Severity:
+  - `severity=active` | `warning` | `critical` | `resolved`
+- Pagination:
+  - `page` (default: 1)
+  - `per_page` (default: 40, max: 200)
+
+**Response** `200`
+```json
+{
+  "count": 1,
+  "page": 1,
+  "per_page": 40,
+  "project_bottlenecks": [
+    {
+      "id": 1,
+      "project_id": 1,
+      "title": "Obsidian Vault Indexing Timeout",
+      "description": "Large attachments slow down sync",
+      "severity": "active",
+      "resolved_at": null,
+      "position": 1,
+      "created_at": "2026-09-01T10:00:00.000Z",
+      "updated_at": "2026-09-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+### `GET /api/projects/:project_id/project_bottlenecks/:id`
+
+Fetches a single project bottleneck.
+
+### `POST /api/projects/:project_id/project_bottlenecks`
+
+Creates a project bottleneck.
+
+**Params**: `title` (required), `description`, `severity`, `position`, `resolved_at`.
+
+**Response** `201 Created`.
+
+### `PATCH`/`PUT /api/projects/:project_id/project_bottlenecks/:id`
+
+Updates a project bottleneck. Also accepts `resolved=true|false` to easily toggle resolution timestamp.
+
+**Response** `200 OK`.
+
+### `DELETE /api/projects/:project_id/project_bottlenecks/:id`
+
+Deletes a project bottleneck. Returns `204 No Content`.
+
+---
+
+## Project Todos
+
+### `GET /api/projects/:project_id/project_todos`
+
+Lists todos for a project. Supports date range filtering on `created_at`, completion status filtering, and pagination.
+
+**Query Parameters:**
+- Date range:
+  - `created_at_gt` / `from` / `starts_at` / `start_date`: items created after date/time
+  - `created_at_gte`: items created on or after date/time
+  - `created_at_lt` / `to` / `ends_at` / `end_date`: items created before date/time
+  - `created_at_lte`: items created on or before date/time
+- Status:
+  - `completed=true|false`
+  - `active=true` (`completed=false`) / `active=false` (`completed=true`)
+- Pagination:
+  - `page` (default: 1)
+  - `per_page` (default: 40, max: 200)
+
+**Response** `200`
+```json
+{
+  "count": 1,
+  "page": 1,
+  "per_page": 40,
+  "project_todos": [
+    {
+      "id": 1,
+      "project_id": 1,
+      "title": "Migrate database indices",
+      "meta_text": "High priority",
+      "completed": false,
+      "completed_at": null,
+      "position": 1,
+      "created_at": "2026-09-01T10:00:00.000Z",
+      "updated_at": "2026-09-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+### `GET /api/projects/:project_id/project_todos/:id`
+
+Fetches a single project todo.
+
+### `POST /api/projects/:project_id/project_todos`
+
+Creates a project todo.
+
+**Params**: `title` (required), `meta_text`, `completed`, `completed_at`, `position`.
+
+**Response** `201 Created`.
+
+### `PATCH`/`PUT /api/projects/:project_id/project_todos/:id`
+
+Updates a project todo.
+
+**Response** `200 OK`.
+
+### `DELETE /api/projects/:project_id/project_todos/:id`
+
+Deletes a project todo. Returns `204 No Content`.
+
+---
+
+## Project Milestones
+
+### `GET /api/projects/:project_id/project_milestones`
+
+Lists milestones for a project. Supports date range filtering on `created_at`, active/inactive filtering, and pagination.
+
+**Query Parameters:**
+- Date range:
+  - `created_at_gt` / `from` / `starts_at` / `start_date`: items created after date/time
+  - `created_at_gte`: items created on or after date/time
+  - `created_at_lt` / `to` / `ends_at` / `end_date`: items created before date/time
+  - `created_at_lte`: items created on or before date/time
+- Status:
+  - `active=true|false`
+- Pagination:
+  - `page` (default: 1)
+  - `per_page` (default: 40, max: 200)
+
+**Response** `200`
+```json
+{
+  "count": 1,
+  "page": 1,
+  "per_page": 40,
+  "project_milestones": [
+    {
+      "id": 1,
+      "project_id": 1,
+      "title": "Discovery & framework alignment",
+      "description": "Initial architecture validated",
+      "icon": "✅",
+      "active": true,
+      "position": 1,
+      "created_at": "2026-09-01T10:00:00.000Z",
+      "updated_at": "2026-09-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+### `GET /api/projects/:project_id/project_milestones/:id`
+
+Fetches a single project milestone.
+
+### `POST /api/projects/:project_id/project_milestones`
+
+Creates a project milestone.
+
+**Params**: `title` (required), `description`, `icon`, `active`, `position`.
+
+**Response** `201 Created`.
+
+### `PATCH`/`PUT /api/projects/:project_id/project_milestones/:id`
+
+Updates a project milestone.
+
+**Response** `200 OK`.
+
+### `DELETE /api/projects/:project_id/project_milestones/:id`
+
+Deletes a project milestone. Returns `204 No Content`.
+
+---
+
 ## Source Files
 
 - Auth: [`app/controllers/api/base_controller.rb`](../app/controllers/api/base_controller.rb)
@@ -946,5 +1157,8 @@ Deletes an obsidian note from the database and cleans up the associated internal
 - Project Knowledge Activities: [`app/controllers/api/project_knowledge_activities_controller.rb`](../app/controllers/api/project_knowledge_activities_controller.rb)
 - Project Directory Items: [`app/controllers/api/project_directory_items_controller.rb`](../app/controllers/api/project_directory_items_controller.rb)
 - Project Obsidian Notes: [`app/controllers/api/project_obsidian_notes_controller.rb`](../app/controllers/api/project_obsidian_notes_controller.rb)
+- Project Bottlenecks: [`app/controllers/api/project_bottlenecks_controller.rb`](../app/controllers/api/project_bottlenecks_controller.rb)
+- Project Todos: [`app/controllers/api/project_todos_controller.rb`](../app/controllers/api/project_todos_controller.rb)
+- Project Milestones: [`app/controllers/api/project_milestones_controller.rb`](../app/controllers/api/project_milestones_controller.rb)
 - Routes: [`config/routes.rb`](../config/routes.rb) (`namespace :api`)
 - Tests: `test/controllers/api/*_test.rb`

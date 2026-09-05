@@ -1,7 +1,7 @@
 # `space.api` — Async Bonfire API Client
 
 Thin async Python wrapper around the Bonfire HTTP API described in
-[API_REFERENCE.md](../hermes/API_REFERENCE.md). One `async def` per endpoint, 85 in total,
+[API_REFERENCE.md](../hermes/API_REFERENCE.md). One `async def` per endpoint, 100 in total,
 all re-exported flat from the `space.api` package.
 
 Source: [space/api/](../../space/api/)
@@ -784,6 +784,192 @@ async def delete_obsidian_note(project_id: int | str, note_id: int | str) -> Non
 
 ---
 
+## Project Bottlenecks
+
+| Function | Endpoint |
+|---|---|
+| `list_project_bottlenecks` | `GET /api/projects/:project_id/project_bottlenecks` |
+| `get_project_bottleneck` | `GET .../project_bottlenecks/:id` |
+| `create_project_bottleneck` | `POST .../project_bottlenecks` |
+| `update_project_bottleneck` | `PATCH .../project_bottlenecks/:id` |
+| `delete_project_bottleneck` | `DELETE .../project_bottlenecks/:id` |
+
+```python
+async def list_project_bottlenecks(
+    project_id: int | str,
+    *,
+    created_at_gt: str | None = None,
+    created_at_gte: str | None = None,
+    created_at_lt: str | None = None,
+    created_at_lte: str | None = None,
+    from_: str | None = None,
+    starts_at: str | None = None,
+    start_date: str | None = None,
+    to: str | None = None,
+    ends_at: str | None = None,
+    end_date: str | None = None,
+    active: bool | None = None,
+    severity: str | None = None,
+    page: int | None = None,
+    per_page: int | None = None,
+) -> ProjectBottleneckList
+
+async def get_project_bottleneck(
+    project_id: int | str, bottleneck_id: int | str
+) -> ProjectBottleneck
+
+async def create_project_bottleneck(
+    project_id: int | str,
+    title: str,
+    *,
+    description: str | None = None,
+    severity: str | None = None,
+    position: int | None = None,
+    resolved_at: str | None = None,
+) -> ProjectBottleneck
+
+async def update_project_bottleneck(
+    project_id: int | str,
+    bottleneck_id: int | str,
+    *,
+    title: str | None = None,
+    description: str | None = None,
+    severity: str | None = None,
+    position: int | None = None,
+    resolved_at: str | None = None,
+    resolved: bool | None = None,
+) -> ProjectBottleneck
+
+async def delete_project_bottleneck(
+    project_id: int | str, bottleneck_id: int | str
+) -> None
+```
+
+---
+
+## Project Todos
+
+| Function | Endpoint |
+|---|---|
+| `list_project_todos` | `GET /api/projects/:project_id/project_todos` |
+| `get_project_todo` | `GET .../project_todos/:id` |
+| `create_project_todo` | `POST .../project_todos` |
+| `update_project_todo` | `PATCH .../project_todos/:id` |
+| `delete_project_todo` | `DELETE .../project_todos/:id` |
+
+```python
+async def list_project_todos(
+    project_id: int | str,
+    *,
+    created_at_gt: str | None = None,
+    created_at_gte: str | None = None,
+    created_at_lt: str | None = None,
+    created_at_lte: str | None = None,
+    from_: str | None = None,
+    starts_at: str | None = None,
+    start_date: str | None = None,
+    to: str | None = None,
+    ends_at: str | None = None,
+    end_date: str | None = None,
+    completed: bool | None = None,
+    active: bool | None = None,
+    page: int | None = None,
+    per_page: int | None = None,
+) -> ProjectTodoList
+
+async def get_project_todo(
+    project_id: int | str, todo_id: int | str
+) -> ProjectTodo
+
+async def create_project_todo(
+    project_id: int | str,
+    title: str,
+    *,
+    meta_text: str | None = None,
+    completed: bool | None = None,
+    completed_at: str | None = None,
+    position: int | None = None,
+) -> ProjectTodo
+
+async def update_project_todo(
+    project_id: int | str,
+    todo_id: int | str,
+    *,
+    title: str | None = None,
+    meta_text: str | None = None,
+    completed: bool | None = None,
+    completed_at: str | None = None,
+    position: int | None = None,
+) -> ProjectTodo
+
+async def delete_project_todo(
+    project_id: int | str, todo_id: int | str
+) -> None
+```
+
+---
+
+## Project Milestones
+
+| Function | Endpoint |
+|---|---|
+| `list_project_milestones` | `GET /api/projects/:project_id/project_milestones` |
+| `get_project_milestone` | `GET .../project_milestones/:id` |
+| `create_project_milestone` | `POST .../project_milestones` |
+| `update_project_milestone` | `PATCH .../project_milestones/:id` |
+| `delete_project_milestone` | `DELETE .../project_milestones/:id` |
+
+```python
+async def list_project_milestones(
+    project_id: int | str,
+    *,
+    created_at_gt: str | None = None,
+    created_at_gte: str | None = None,
+    created_at_lt: str | None = None,
+    created_at_lte: str | None = None,
+    from_: str | None = None,
+    starts_at: str | None = None,
+    start_date: str | None = None,
+    to: str | None = None,
+    ends_at: str | None = None,
+    end_date: str | None = None,
+    active: bool | None = None,
+    page: int | None = None,
+    per_page: int | None = None,
+) -> ProjectMilestoneList
+
+async def get_project_milestone(
+    project_id: int | str, milestone_id: int | str
+) -> ProjectMilestone
+
+async def create_project_milestone(
+    project_id: int | str,
+    title: str,
+    *,
+    description: str | None = None,
+    icon: str | None = None,
+    active: bool | None = None,
+    position: int | None = None,
+) -> ProjectMilestone
+
+async def update_project_milestone(
+    project_id: int | str,
+    milestone_id: int | str,
+    *,
+    title: str | None = None,
+    description: str | None = None,
+    icon: str | None = None,
+    active: bool | None = None,
+    position: int | None = None,
+) -> ProjectMilestone
+
+async def delete_project_milestone(
+    project_id: int | str, milestone_id: int | str
+) -> None
+```
+
+---
+
 ## Client Lifecycle
 
 | Function | Purpose |
@@ -840,3 +1026,6 @@ Common statuses: `401` (bad token), `400` (missing required param), `404` (not f
 | [knowledge_activities.py](../../space/api/knowledge_activities.py) | Knowledge activities |
 | [directory_items.py](../../space/api/directory_items.py) | Directory items |
 | [obsidian_notes.py](../../space/api/obsidian_notes.py) | Obsidian notes |
+| [project_bottlenecks.py](../../space/api/project_bottlenecks.py) | Project bottlenecks |
+| [project_todos.py](../../space/api/project_todos.py) | Project todos |
+| [project_milestones.py](../../space/api/project_milestones.py) | Project milestones |
