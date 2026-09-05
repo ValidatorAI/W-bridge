@@ -1,7 +1,7 @@
 from sqlalchemy import inspect
 
 from db.database import Base
-from db.models import Bot, SpaceEvent
+from db.models import Bot, McpException, SpaceEvent
 
 
 def test_bot_model_has_no_token_column():
@@ -23,6 +23,17 @@ def test_space_event_model_has_internal_primary_key_and_json_field():
     assert "stored_date" in mapper.columns
     assert "sent_date" in mapper.columns
     assert "result" in mapper.columns
+
+
+def test_mcp_exception_model_exposes_expected_columns_and_table_name():
+    mapper = inspect(McpException)
+
+    assert mapper.primary_key[0].name == "id"
+    assert mapper.mapped_table.name == "mcp_exceptions"
+    assert "tool_call_name" in mapper.columns
+    assert "exception" in mapper.columns
+    assert "stored_exception" in mapper.columns
+    assert "created_at" in mapper.columns
 
 
 def test_legacy_session_tracking_tables_are_removed_from_orm_metadata():
