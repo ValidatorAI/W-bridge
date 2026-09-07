@@ -2,8 +2,6 @@ import re
 from difflib import SequenceMatcher
 from typing import Any, Iterable
 
-from db.database import SessionLocal
-from db.models import Bot
 from space.api.project_users import list_project_users
 from space.api.projects import list_projects
 from space.api.rooms import list_rooms, search_rooms
@@ -130,28 +128,22 @@ async def room_name_fuzzy(project_id: int | str, room_name: str) -> dict[str, An
     return _pick_best_match(room_name, rooms, get_name)
 
 
-async def bot_name_fuzzy_match(bot_name: str) -> dict[str, Any] | None:
-    """Return the single best-matching active bot by name or profile name."""
-    with SessionLocal() as session:
-        bots = session.query(Bot).filter(Bot.active.is_(True)).all()
+async def bot_name_fuzzy_match(project_id: int | str, bot_name: str) -> dict[str, Any] | None:
+    """Return the single best-matching bot (role == 2) from project users."""
+    payload = await list_project_users(project_id)
+    records = payload.get("project_users", []) if isinstance(payload, dict) else payload or []
+    bots = [
+        record
+        for record in records
+        if (record.get("role") if isinstance(record, dict) else getattr(record, "role", None)) == 2
+    ]
 
     def get_name(bot: Any) -> str:
         if isinstance(bot, dict):
-            return bot.get("name") or bot.get("profile_name") or ""
-        return getattr(bot, "name", "") or getattr(bot, "profile_name", "") or ""
+            return bot.get("name") or bot.get("display_name") or ""
+        return getattr(bot, "name", "") or getattr(bot, "display_name", "") or ""
 
-    match = _pick_best_match(bot_name, bots, get_name)
-    if match is None:
-        return None
-
-    if hasattr(match, "to_dict"):
-        return match.to_dict()
-    return {
-        "id": getattr(match, "id", None),
-        "name": getattr(match, "name", None),
-        "profile_name": getattr(match, "profile_name", None),
-        "active": getattr(match, "active", None),
-    }
+    return _pick_best_match(bot_name, bots, get_name)
 
 
 # Convenience aliases matching the requested naming variants.

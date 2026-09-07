@@ -49,13 +49,14 @@ class TestFuzzyMatchHelpers(unittest.TestCase):
 
     def test_bot_name_fuzzy_match(self):
         async def _run():
-            with patch("mcp.helpers.SessionLocal") as session_factory:
-                session = session_factory.return_value
-                session.__enter__.return_value.query.return_value.filter.return_value.all.return_value = [
-                    type("Bot", (), {"id": 5, "name": "Hera Bot", "profile_name": "default", "active": True})(),
-                    type("Bot", (), {"id": 6, "name": "Ops Helper", "profile_name": "default", "active": True})(),
+            with patch("mcp.helpers.list_project_users", AsyncMock(return_value={
+                "project_users": [
+                    {"id": 5, "name": "Hera Bot", "role": 2},
+                    {"id": 6, "name": "Alicia Stone", "role": 1},
+                    {"id": 7, "name": "Ops Helper", "role": 2},
                 ]
-                match = await helpers.bot_name_fuzzy_match("hera")
+            })):
+                match = await helpers.bot_name_fuzzy_match(7, "hera")
                 self.assertIsNotNone(match)
                 self.assertEqual(match["id"], 5)
                 self.assertEqual(match["name"], "Hera Bot")
