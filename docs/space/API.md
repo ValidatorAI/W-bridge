@@ -101,20 +101,22 @@ Create/update/delete broadcast realtime Turbo Stream updates to connected web cl
 
 | Function | Endpoint |
 |---|---|
-| `list_messages` | `GET /api/projects/:project_id/rooms/:room_id/messages` |
-| `create_message` | `POST /api/projects/:project_id/rooms/:room_id/messages` |
-| `get_message` | `GET /api/projects/:project_id/rooms/:room_id/messages/:id` |
-| `update_message` | `PATCH /api/projects/:project_id/rooms/:room_id/messages/:id` |
-| `delete_message` | `DELETE /api/projects/:project_id/rooms/:room_id/messages/:id` |
-| `download_message_attachment` | `GET /api/projects/:project_id/rooms/:room_id/messages/:id/attachment` |
+| `list_messages` | `GET /api/rooms/:room_id/messages` (or legacy `GET /api/projects/:project_id/rooms/:room_id/messages`) |
+| `create_message` | `POST /api/rooms/:room_id/messages` (or legacy `POST /api/projects/:project_id/rooms/:room_id/messages`) |
+| `get_message` | `GET /api/rooms/:room_id/messages/:id` (or legacy `GET /api/projects/:project_id/rooms/:room_id/messages/:id`) |
+| `update_message` | `PATCH /api/rooms/:room_id/messages/:id` (or legacy `PATCH /api/projects/:project_id/rooms/:room_id/messages/:id`) |
+| `delete_message` | `DELETE /api/rooms/:room_id/messages/:id` (or legacy `DELETE /api/projects/:project_id/rooms/:room_id/messages/:id`) |
+| `download_message_attachment` | `GET /api/rooms/:room_id/messages/:id/attachment` (or legacy `GET /api/projects/:project_id/rooms/:room_id/messages/:id/attachment`) |
 | `get_message_by_id` | `GET /api/messages/:id` |
 | `update_message_by_id` | `PATCH /api/messages/:id` |
 | `delete_message_by_id` | `DELETE /api/messages/:id` |
 | `download_attachment_by_id` | `GET /api/messages/:id/attachment` |
 
+When `project_id` is `None`, the room-scoped primary routes (`/api/rooms/:room_id/messages`) are used. This is required for private rooms/chats that are not under any project. When `project_id` is provided, the legacy project-scoped routes are used.
+
 ```python
 async def list_messages(
-    project_id: int | str,
+    project_id: int | str | None,
     room_id: int | str,
     *,
     page: int | None = None,
@@ -122,7 +124,7 @@ async def list_messages(
 ) -> dict[str, Any]
 
 async def create_message(
-    project_id: int | str,
+    project_id: int | str | None,
     room_id: int | str,
     user_id: int | str,
     *,
@@ -131,11 +133,11 @@ async def create_message(
 ) -> dict[str, Any]
 
 async def get_message(
-    project_id: int | str, room_id: int | str, message_id: int | str
+    project_id: int | str | None, room_id: int | str, message_id: int | str
 ) -> dict[str, Any]
 
 async def update_message(
-    project_id: int | str,
+    project_id: int | str | None,
     room_id: int | str,
     message_id: int | str,
     *,
@@ -144,11 +146,11 @@ async def update_message(
 ) -> dict[str, Any]
 
 async def delete_message(
-    project_id: int | str, room_id: int | str, message_id: int | str
+    project_id: int | str | None, room_id: int | str, message_id: int | str
 ) -> None
 
 async def download_message_attachment(
-    project_id: int | str,
+    project_id: int | str | None,
     room_id: int | str,
     message_id: int | str,
     *,
@@ -180,11 +182,11 @@ async def download_attachment_by_id(
 
 | Function | Endpoint |
 |---|---|
-| `send_action` | `POST /api/projects/:project_id/rooms/:room_id/actions` |
+| `send_action` | `POST /api/rooms/:room_id/actions` (or legacy `POST /api/projects/:project_id/rooms/:room_id/actions`) |
 
 ```python
 async def send_action(
-    project_id: int | str,
+    project_id: int | str | None,
     room_id: int | str,
     user_id: int | str,
     action_type: str,

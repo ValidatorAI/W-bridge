@@ -15,6 +15,7 @@ from mcp.helpers import (
     username_fuzzy_match,
 )
 from space.api import (
+    create_adr,
     create_all_hands_action_item,
     create_all_hands_decision,
     create_all_hands_takeaway,
@@ -31,6 +32,7 @@ from space.api import (
     create_project_bottleneck,
     create_project_milestone,
     create_project_todo,
+    delete_adr,
     delete_all_hands_action_item,
     delete_all_hands_decision,
     delete_all_hands_takeaway,
@@ -48,6 +50,7 @@ from space.api import (
     delete_project_milestone,
     delete_project_todo,
     filter_company_status_items,
+    get_adr,
     get_all_hands_action_item,
     get_all_hands_decision,
     get_all_hands_takeaway,
@@ -65,6 +68,7 @@ from space.api import (
     get_project_bottleneck,
     get_project_milestone,
     get_project_todo,
+    list_adrs,
     list_all_hands_action_items,
     list_all_hands_decisions,
     list_all_hands_takeaways,
@@ -80,6 +84,7 @@ from space.api import (
     list_project_milestones,
     list_project_todos,
     send_action,
+    update_adr,
     update_all_hands_action_item,
     update_all_hands_decision,
     update_all_hands_takeaway,
@@ -137,7 +142,7 @@ async def _resolve_project_id(
         if project is None:
             raise ValueError(f"Project not found: {project_name}")
         return project.get("id") or project.get("slug")
-    raise ValueError("Either project_id or project_name is required.")
+    return None
 
 
 async def _resolve_room_id(
@@ -146,6 +151,8 @@ async def _resolve_room_id(
     if room_id is not None:
         return room_id
     if room_name:
+        if project_id is None:
+            raise ValueError("room_name resolution requires project_id or project_name.")
         room = await room_name_fuzzy(project_id, room_name)
         if room is None:
             raise ValueError(f"Room not found: {room_name}")
@@ -159,6 +166,8 @@ async def _resolve_user_id(
     if user_id is not None:
         return user_id
     if user_name:
+        if project_id is None:
+            raise ValueError("user_name resolution requires project_id or project_name.")
         user = await username_fuzzy_match(project_id, user_name)
         if user is None:
             raise ValueError(f"User not found: {user_name}")
@@ -172,6 +181,8 @@ async def _resolve_bot_id(
     if bot_id is not None:
         return bot_id
     if bot_name:
+        if project_id is None:
+            raise ValueError("bot_name resolution requires project_id or project_name.")
         bot = await bot_name_fuzzy_match(project_id, bot_name)
         if bot is None:
             raise ValueError(f"Bot not found: {bot_name}")
@@ -341,6 +352,166 @@ async def ai_confirm(**kwargs: Any) -> str:
 
 async def knowledge_proposals(**kwargs: Any) -> str:
     return await _list_attention_items_by_category("knowledge_proposals", **kwargs)
+
+
+async def _add_attention_item(
+    category: str,
+    title: str,
+    project_id: Any = None,
+    project_name: str | None = None,
+    room_id: Any = None,
+    room_name: str | None = None,
+    user_id: Any = None,
+    user_name: str | None = None,
+    meta_text: str | None = None,
+    due_at: str | None = None,
+    status: str | None = None,
+    overdue: Any = None,
+    source_id: int | str | None = None,
+    source_type: str | None = None,
+    target_id: int | str | None = None,
+    target_type: str | None = None,
+    action_label: str | None = None,
+    ai_confirm: Any = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = None
+    if project_id is not None or project_name:
+        resolved_project_id = await _resolve_project_id(project_id, project_name)
+    resolved_room_id = None
+    if resolved_project_id is not None and (room_id is not None or room_name):
+        resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name)
+    resolved_user_id = None
+    if resolved_project_id is not None and (user_id is not None or user_name):
+        resolved_user_id = await _resolve_user_id(resolved_project_id, user_id, user_name)
+
+    result = await create_attention_item(
+        title,
+        category,
+        meta_text=meta_text,
+        due_at=due_at,
+        status=status,
+        overdue=_coerce_bool(overdue),
+        project_id=resolved_project_id,
+        room_id=resolved_room_id,
+        user_id=resolved_user_id,
+        source_id=source_id,
+        source_type=source_type,
+        target_id=target_id,
+        target_type=target_type,
+        action_label=action_label,
+        ai_confirm=_coerce_bool(ai_confirm),
+    )
+    return _format_result(result)
+
+
+async def _edit_attention_item(
+    category: str,
+    attention_item_id: int | str,
+    project_id: Any = None,
+    project_name: str | None = None,
+    room_id: Any = None,
+    room_name: str | None = None,
+    user_id: Any = None,
+    user_name: str | None = None,
+    title: str | None = None,
+    meta_text: str | None = None,
+    due_at: str | None = None,
+    status: str | None = None,
+    overdue: Any = None,
+    source_id: int | str | None = None,
+    source_type: str | None = None,
+    target_id: int | str | None = None,
+    target_type: str | None = None,
+    action_label: str | None = None,
+    ai_confirm: Any = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = None
+    if project_id is not None or project_name:
+        resolved_project_id = await _resolve_project_id(project_id, project_name)
+    resolved_room_id = None
+    if resolved_project_id is not None and (room_id is not None or room_name):
+        resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name)
+    resolved_user_id = None
+    if resolved_project_id is not None and (user_id is not None or user_name):
+        resolved_user_id = await _resolve_user_id(resolved_project_id, user_id, user_name)
+
+    result = await update_attention_item(
+        attention_item_id,
+        category=category,
+        title=title,
+        meta_text=meta_text,
+        due_at=due_at,
+        status=status,
+        overdue=_coerce_bool(overdue),
+        project_id=resolved_project_id,
+        room_id=resolved_room_id,
+        user_id=resolved_user_id,
+        source_id=source_id,
+        source_type=source_type,
+        target_id=target_id,
+        target_type=target_type,
+        action_label=action_label,
+        ai_confirm=_coerce_bool(ai_confirm),
+    )
+    return _format_result(result)
+
+
+async def add_decisions_waiting(title: str, **kwargs: Any) -> str:
+    return await _add_attention_item("decisions_waiting", title, **kwargs)
+
+
+async def edit_decisions_waiting(attention_item_id: int | str, **kwargs: Any) -> str:
+    return await _edit_attention_item("decisions_waiting", attention_item_id, **kwargs)
+
+
+async def add_blockers(title: str, **kwargs: Any) -> str:
+    return await _add_attention_item("blockers", title, **kwargs)
+
+
+async def edit_blockers(attention_item_id: int | str, **kwargs: Any) -> str:
+    return await _edit_attention_item("blockers", attention_item_id, **kwargs)
+
+
+async def add_outcomes_review(title: str, **kwargs: Any) -> str:
+    return await _add_attention_item("outcomes_review", title, **kwargs)
+
+
+async def edit_outcomes_review(attention_item_id: int | str, **kwargs: Any) -> str:
+    return await _edit_attention_item("outcomes_review", attention_item_id, **kwargs)
+
+
+async def add_mentions(title: str, **kwargs: Any) -> str:
+    return await _add_attention_item("mentions", title, **kwargs)
+
+
+async def edit_mentions(attention_item_id: int | str, **kwargs: Any) -> str:
+    return await _edit_attention_item("mentions", attention_item_id, **kwargs)
+
+
+async def add_material_changes(title: str, **kwargs: Any) -> str:
+    return await _add_attention_item("material_changes", title, **kwargs)
+
+
+async def edit_material_changes(attention_item_id: int | str, **kwargs: Any) -> str:
+    return await _edit_attention_item("material_changes", attention_item_id, **kwargs)
+
+
+async def add_ai_confirm(title: str, **kwargs: Any) -> str:
+    return await _add_attention_item("ai_confirm", title, **kwargs)
+
+
+async def edit_ai_confirm(attention_item_id: int | str, **kwargs: Any) -> str:
+    return await _edit_attention_item("ai_confirm", attention_item_id, **kwargs)
+
+
+async def add_knowledge_proposals(title: str, **kwargs: Any) -> str:
+    return await _add_attention_item("knowledge_proposals", title, **kwargs)
+
+
+async def edit_knowledge_proposals(attention_item_id: int | str, **kwargs: Any) -> str:
+    return await _edit_attention_item("knowledge_proposals", attention_item_id, **kwargs)
 
 
 # ============================================================================
@@ -895,6 +1066,106 @@ async def _delete_project_knowledge_item(
 ) -> str:
     resolved_project_id = await _resolve_project_id(project_id, project_name)
     await delete_knowledge_item(resolved_project_id, item_id)
+    return _format_result(None)
+
+
+# ============================================================================
+# 5. Project All Hands
+# ============================================================================
+
+# ============================================================================
+# 5.1 Project Decision Records (ADRs)
+# ============================================================================
+
+async def project_decision_records(
+    project_id: Any = None,
+    project_name: str | None = None,
+    decision_record_id: Any = None,
+    delete: Any = None,
+    active: Any = None,
+    page: int | None = None,
+    per_page: int | None = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = await _resolve_project_id(project_id, project_name)
+    delete = _coerce_bool(delete)
+    if delete and decision_record_id is not None:
+        await delete_adr(resolved_project_id, decision_record_id)
+        return _format_result(None)
+    if decision_record_id is not None:
+        result = await get_adr(resolved_project_id, decision_record_id)
+        return _format_result(result)
+    result = await list_adrs(
+        resolved_project_id,
+        active=_coerce_bool(active),
+        page=page,
+        per_page=per_page,
+    )
+    return _format_result(result)
+
+
+async def add_project_decision_record(
+    identifier: str,
+    title: str,
+    project_id: Any = None,
+    project_name: str | None = None,
+    decision_date: str | None = None,
+    status: str | None = None,
+    file_path: str | None = None,
+    active: Any = None,
+    position: int | None = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = await _resolve_project_id(project_id, project_name)
+    result = await create_adr(
+        resolved_project_id,
+        identifier,
+        title,
+        decision_date=decision_date,
+        status=status,
+        file_path=file_path,
+        active=_coerce_bool(active),
+        position=position,
+    )
+    return _format_result(result)
+
+
+async def edit_project_decision_record(
+    decision_record_id: Any,
+    project_id: Any = None,
+    project_name: str | None = None,
+    identifier: str | None = None,
+    title: str | None = None,
+    decision_date: str | None = None,
+    status: str | None = None,
+    file_path: str | None = None,
+    active: Any = None,
+    position: int | None = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = await _resolve_project_id(project_id, project_name)
+    result = await update_adr(
+        resolved_project_id,
+        decision_record_id,
+        identifier=identifier,
+        title=title,
+        decision_date=decision_date,
+        status=status,
+        file_path=file_path,
+        active=_coerce_bool(active),
+        position=position,
+    )
+    return _format_result(result)
+
+
+async def _delete_project_decision_record(
+    decision_record_id: Any,
+    project_id: Any = None,
+    project_name: str | None = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = await _resolve_project_id(project_id, project_name)
+    await delete_adr(resolved_project_id, decision_record_id)
     return _format_result(None)
 
 
@@ -1802,6 +2073,23 @@ _PAGINATION_PROPS: dict[str, Any] = {
     "per_page": {"type": "integer", "description": "Items per page"},
 }
 
+_ATTENTION_ITEM_COMMON_PROPS: dict[str, Any] = {
+    **_PROJECT_ID_PROPS,
+    **_ROOM_ID_PROPS,
+    "user_id": {"type": ["string", "integer"], "description": "User ID (fuzzy matched by user_name if omitted)"},
+    "user_name": {"type": "string", "description": "User name (fuzzy matched to ID)"},
+    "meta_text": {"type": "string", "description": "Additional metadata text"},
+    "due_at": {"type": "string", "description": "Due date (ISO 8601)"},
+    "status": {"type": "string", "description": "Item status"},
+    "overdue": {"type": "boolean", "description": "Overdue flag"},
+    "source_id": {"type": ["string", "integer"], "description": "Source record ID"},
+    "source_type": {"type": "string", "description": "Source record type"},
+    "target_id": {"type": ["string", "integer"], "description": "Target record ID"},
+    "target_type": {"type": "string", "description": "Target record type"},
+    "action_label": {"type": "string", "description": "Action label"},
+    "ai_confirm": {"type": "boolean", "description": "AI confirmation flag"},
+}
+
 _DELETE_PROP: dict[str, Any] = {
     "delete": {"type": "boolean", "description": "Set to true to delete the item"}
 }
@@ -1825,6 +2113,34 @@ TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
     "material_changes": material_changes,
     "ai_confirm": ai_confirm,
     "knowledge_proposals": knowledge_proposals,
+    "add_decisions_waiting": add_decisions_waiting,
+    "AddDecisionsWaiting": add_decisions_waiting,
+    "edit_decisions_waiting": edit_decisions_waiting,
+    "EditDecisionsWaiting": edit_decisions_waiting,
+    "add_blockers": add_blockers,
+    "AddBlockers": add_blockers,
+    "edit_blockers": edit_blockers,
+    "EditBlockers": edit_blockers,
+    "add_outcomes_review": add_outcomes_review,
+    "AddOutcomesReview": add_outcomes_review,
+    "edit_outcomes_review": edit_outcomes_review,
+    "EditOutcomesReview": edit_outcomes_review,
+    "add_mentions": add_mentions,
+    "AddMentions": add_mentions,
+    "edit_mentions": edit_mentions,
+    "EditMentions": edit_mentions,
+    "add_material_changes": add_material_changes,
+    "AddMaterialChanges": add_material_changes,
+    "edit_material_changes": edit_material_changes,
+    "EditMaterialChanges": edit_material_changes,
+    "add_ai_confirm": add_ai_confirm,
+    "AddAiConfirm": add_ai_confirm,
+    "edit_ai_confirm": edit_ai_confirm,
+    "EditAiConfirm": edit_ai_confirm,
+    "add_knowledge_proposals": add_knowledge_proposals,
+    "AddKnowledgeProposals": add_knowledge_proposals,
+    "edit_knowledge_proposals": edit_knowledge_proposals,
+    "EditKnowledgeProposals": edit_knowledge_proposals,
     # Company Status
     "company_status_period": company_status_period,
     "add_company_status_period": add_company_status_period,
@@ -1893,6 +2209,15 @@ TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
     "EditProjectAllHandsDecision": edit_project_all_hands_decision,
     "delete_project_all_hands_decision": _delete_project_all_hands_decision,
     "DeleteProjectAllHandsDecision": _delete_project_all_hands_decision,
+    # Project Decision Records (ADRs)
+    "ProjectDecisionRecord": project_decision_records,
+    "project_decision_records": project_decision_records,
+    "add_project_decision_record": add_project_decision_record,
+    "AddProjectDecisionRecord": add_project_decision_record,
+    "edit_project_decision_record": edit_project_decision_record,
+    "EditProjectDecisionRecord": edit_project_decision_record,
+    "delete_project_decision_record": _delete_project_decision_record,
+    "DeleteProjectDecisionRecord": _delete_project_decision_record,
     # Project Knowledge
     "external_knowledge_assets": external_knowledge_assets,
     "external_assets": external_knowledge_assets,
@@ -2069,6 +2394,174 @@ _TOOL_METADATA = [
                 "overdue": {"type": "boolean", "description": "Filter by overdue flag"},
                 **_PAGINATION_PROPS,
             },
+        },
+    ),
+    (
+        "add_decisions_waiting",
+        "Create a company-home decisions-waiting attention item",
+        {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Item title"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["title"],
+        },
+    ),
+    (
+        "edit_decisions_waiting",
+        "Update a company-home decisions-waiting attention item",
+        {
+            "type": "object",
+            "properties": {
+                "attention_item_id": {"type": ["string", "integer"], "description": "Attention item ID"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["attention_item_id"],
+        },
+    ),
+    (
+        "add_blockers",
+        "Create a company-home blocker attention item",
+        {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Item title"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["title"],
+        },
+    ),
+    (
+        "edit_blockers",
+        "Update a company-home blocker attention item",
+        {
+            "type": "object",
+            "properties": {
+                "attention_item_id": {"type": ["string", "integer"], "description": "Attention item ID"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["attention_item_id"],
+        },
+    ),
+    (
+        "add_outcomes_review",
+        "Create a company-home outcomes-review attention item",
+        {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Item title"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["title"],
+        },
+    ),
+    (
+        "edit_outcomes_review",
+        "Update a company-home outcomes-review attention item",
+        {
+            "type": "object",
+            "properties": {
+                "attention_item_id": {"type": ["string", "integer"], "description": "Attention item ID"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["attention_item_id"],
+        },
+    ),
+    (
+        "add_mentions",
+        "Create a company-home mention attention item",
+        {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Item title"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["title"],
+        },
+    ),
+    (
+        "edit_mentions",
+        "Update a company-home mention attention item",
+        {
+            "type": "object",
+            "properties": {
+                "attention_item_id": {"type": ["string", "integer"], "description": "Attention item ID"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["attention_item_id"],
+        },
+    ),
+    (
+        "add_material_changes",
+        "Create a company-home material-change attention item",
+        {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Item title"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["title"],
+        },
+    ),
+    (
+        "edit_material_changes",
+        "Update a company-home material-change attention item",
+        {
+            "type": "object",
+            "properties": {
+                "attention_item_id": {"type": ["string", "integer"], "description": "Attention item ID"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["attention_item_id"],
+        },
+    ),
+    (
+        "add_ai_confirm",
+        "Create a company-home AI-confirm attention item",
+        {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Item title"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["title"],
+        },
+    ),
+    (
+        "edit_ai_confirm",
+        "Update a company-home AI-confirm attention item",
+        {
+            "type": "object",
+            "properties": {
+                "attention_item_id": {"type": ["string", "integer"], "description": "Attention item ID"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["attention_item_id"],
+        },
+    ),
+    (
+        "add_knowledge_proposals",
+        "Create a company-home knowledge-proposal attention item",
+        {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Item title"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["title"],
+        },
+    ),
+    (
+        "edit_knowledge_proposals",
+        "Update a company-home knowledge-proposal attention item",
+        {
+            "type": "object",
+            "properties": {
+                "attention_item_id": {"type": ["string", "integer"], "description": "Attention item ID"},
+                **_ATTENTION_ITEM_COMMON_PROPS,
+            },
+            "required": ["attention_item_id"],
         },
     ),
     # Company Status
@@ -2700,6 +3193,70 @@ _TOOL_METADATA = [
             "required": ["decision_id"],
         },
     ),
+    # Project Decision Records (ADRs)
+    (
+        "project_decision_records",
+        "List, get, or delete project decision records (ADRs)",
+        {
+            "type": "object",
+            "properties": {
+                **_PROJECT_ID_PROPS,
+                "decision_record_id": {"type": ["string", "integer"], "description": "Decision record (ADR) ID for get/delete"},
+                **_ACTIVE_PROP,
+                **_DELETE_PROP,
+                **_PAGINATION_PROPS,
+            },
+        },
+    ),
+    (
+        "add_project_decision_record",
+        "Create a project decision record (ADR)",
+        {
+            "type": "object",
+            "properties": {
+                **_PROJECT_ID_PROPS,
+                "identifier": {"type": "string", "description": "ADR identifier (e.g. ADR-001)"},
+                "title": {"type": "string", "description": "ADR title"},
+                "decision_date": {"type": "string", "description": "Decision date (ISO 8601)"},
+                "status": {"type": "string", "description": "Status: proposed, accepted, deprecated, or superseded"},
+                "file_path": {"type": "string", "description": "File path to the ADR document"},
+                "active": {"type": "boolean", "description": "Active flag"},
+                "position": {"type": "integer", "description": "Display position"},
+            },
+            "required": ["identifier", "title"],
+        },
+    ),
+    (
+        "edit_project_decision_record",
+        "Update a project decision record (ADR)",
+        {
+            "type": "object",
+            "properties": {
+                **_PROJECT_ID_PROPS,
+                "decision_record_id": {"type": ["string", "integer"], "description": "Decision record (ADR) ID"},
+                "identifier": {"type": "string", "description": "ADR identifier (e.g. ADR-001)"},
+                "title": {"type": "string", "description": "ADR title"},
+                "decision_date": {"type": "string", "description": "Decision date (ISO 8601)"},
+                "status": {"type": "string", "description": "Status: proposed, accepted, deprecated, or superseded"},
+                "file_path": {"type": "string", "description": "File path to the ADR document"},
+                "active": {"type": "boolean", "description": "Active flag"},
+                "position": {"type": "integer", "description": "Display position"},
+            },
+            "required": ["decision_record_id"],
+        },
+    ),
+    (
+        "delete_project_decision_record",
+        "Delete a project decision record (ADR)",
+        {
+            "type": "object",
+            "properties": {
+                **_PROJECT_ID_PROPS,
+                "decision_record_id": {"type": ["string", "integer"], "description": "Decision record (ADR) ID"},
+            },
+            "required": ["decision_record_id"],
+        },
+    ),
     # Project Knowledge
     (
         "external_knowledge_assets",
@@ -3034,6 +3591,7 @@ _TOOL_METADATA = [
                 "attachment_path": {"type": "string", "description": "Local file path to attach"},
                 "attachment_url": {"type": "string", "description": "URL of file to attach"},
             },
+            "required": ["room_id"],
         },
     ),
     (
@@ -3047,6 +3605,7 @@ _TOOL_METADATA = [
                 **_SENDER_PROPS,
                 "body": {"type": "string", "description": "Loading message body"},
             },
+            "required": ["room_id"],
         },
     ),
     (
@@ -3083,6 +3642,7 @@ _TOOL_METADATA = [
                 **_SENDER_PROPS,
                 "action_type": {"type": "string", "description": "Action type: typing_start or typing_stop", "default": "typing_start"},
             },
+            "required": ["room_id"],
         },
     ),
     (
@@ -3133,6 +3693,10 @@ _ALIASES = [
     ("AddProjectAllHandsDecision", "add_project_all_hands_decision"),
     ("EditProjectAllHandsDecision", "edit_project_all_hands_decision"),
     ("DeleteProjectAllHandsDecision", "delete_project_all_hands_decision"),
+    ("ProjectDecisionRecord", "project_decision_records"),
+    ("AddProjectDecisionRecord", "add_project_decision_record"),
+    ("EditProjectDecisionRecord", "edit_project_decision_record"),
+    ("DeleteProjectDecisionRecord", "delete_project_decision_record"),
     ("AddExternalKnowledgeAsset", "add_external_knowledge_asset"),
     ("EditExternalKnowledgeAsset", "edit_external_knowledge_asset"),
     ("DeleteExternalKnowledgeAsset", "delete_external_knowledge_asset"),

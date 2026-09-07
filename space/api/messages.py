@@ -10,8 +10,26 @@ def _body_kwargs(fields: dict[str, Any], attachment: FileUpload | None) -> dict[
     return {"data": prune(fields), "files": {"attachment": attachment}}
 
 
+def _room_message_path(
+    room_id: int | str,
+    project_id: int | str | None = None,
+    message_id: int | str | None = None,
+    suffix: str = "",
+) -> str:
+    base = (
+        f"/projects/{project_id}/rooms/{room_id}/messages"
+        if project_id is not None
+        else f"/rooms/{room_id}/messages"
+    )
+    if message_id is not None:
+        base = f"{base}/{message_id}"
+    if suffix:
+        base = f"{base}/{suffix}"
+    return base
+
+
 async def list_messages(
-    project_id: int | str,
+    project_id: int | str | None,
     room_id: int | str,
     *,
     page: int | None = None,
@@ -19,13 +37,13 @@ async def list_messages(
 ) -> MessageList:
     return await request(
         "GET",
-        f"/projects/{project_id}/rooms/{room_id}/messages",
+        _room_message_path(room_id, project_id),
         params=prune({"page": page, "per_page": per_page}),
     )
 
 
 async def create_message(
-    project_id: int | str,
+    project_id: int | str | None,
     room_id: int | str,
     user_id: int | str,
     *,
@@ -35,21 +53,21 @@ async def create_message(
     """At least one of `body` or `attachment` is required."""
     return await request(
         "POST",
-        f"/projects/{project_id}/rooms/{room_id}/messages",
+        _room_message_path(room_id, project_id),
         **_body_kwargs({"user_id": user_id, "body": body}, attachment),
     )
 
 
 async def get_message(
-    project_id: int | str,
+    project_id: int | str | None,
     room_id: int | str,
     message_id: int | str,
 ) -> Message:
-    return await request("GET", f"/projects/{project_id}/rooms/{room_id}/messages/{message_id}")
+    return await request("GET", _room_message_path(room_id, project_id, message_id))
 
 
 async def update_message(
-    project_id: int | str,
+    project_id: int | str | None,
     room_id: int | str,
     message_id: int | str,
     *,
@@ -59,21 +77,21 @@ async def update_message(
     """At least one of `body` or `attachment` is required."""
     return await request(
         "PATCH",
-        f"/projects/{project_id}/rooms/{room_id}/messages/{message_id}",
+        _room_message_path(room_id, project_id, message_id),
         **_body_kwargs({"body": body}, attachment),
     )
 
 
 async def delete_message(
-    project_id: int | str,
+    project_id: int | str | None,
     room_id: int | str,
     message_id: int | str,
 ) -> None:
-    return await request("DELETE", f"/projects/{project_id}/rooms/{room_id}/messages/{message_id}")
+    return await request("DELETE", _room_message_path(room_id, project_id, message_id))
 
 
 async def download_message_attachment(
-    project_id: int | str,
+    project_id: int | str | None,
     room_id: int | str,
     message_id: int | str,
     *,
@@ -81,7 +99,7 @@ async def download_message_attachment(
 ) -> bytes:
     return await request_bytes(
         "GET",
-        f"/projects/{project_id}/rooms/{room_id}/messages/{message_id}/attachment",
+        _room_message_path(room_id, project_id, message_id, "attachment"),
         params=prune({"disposition": disposition}),
     )
 

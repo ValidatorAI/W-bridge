@@ -96,6 +96,20 @@ class TestMCP(unittest.TestCase):
             "material_changes",
             "ai_confirm",
             "knowledge_proposals",
+            "add_decisions_waiting",
+            "edit_decisions_waiting",
+            "add_blockers",
+            "edit_blockers",
+            "add_outcomes_review",
+            "edit_outcomes_review",
+            "add_mentions",
+            "edit_mentions",
+            "add_material_changes",
+            "edit_material_changes",
+            "add_ai_confirm",
+            "edit_ai_confirm",
+            "add_knowledge_proposals",
+            "edit_knowledge_proposals",
             # Company Status
             "company_status_period",
             "priorities",
@@ -136,6 +150,20 @@ class TestMCP(unittest.TestCase):
         sample_tools = [
             ("decisions_waiting", {}),
             ("blockers", {}),
+            ("add_blockers", {"title": "A blocker", "project_id": 1}),
+            ("edit_blockers", {"attention_item_id": 10, "title": "Updated blocker"}),
+            ("add_decisions_waiting", {"title": "A pending decision"}),
+            ("edit_decisions_waiting", {"attention_item_id": 11, "status": "resolved"}),
+            ("add_outcomes_review", {"title": "Outcome to review"}),
+            ("edit_outcomes_review", {"attention_item_id": 12}),
+            ("add_mentions", {"title": "A mention"}),
+            ("edit_mentions", {"attention_item_id": 13}),
+            ("add_material_changes", {"title": "A material change"}),
+            ("edit_material_changes", {"attention_item_id": 14}),
+            ("add_ai_confirm", {"title": "Needs AI confirmation"}),
+            ("edit_ai_confirm", {"attention_item_id": 15}),
+            ("add_knowledge_proposals", {"title": "Propose knowledge"}),
+            ("edit_knowledge_proposals", {"attention_item_id": 16}),
             ("company_status_period", {}),
             ("priorities", {}),
             ("project_milestones", {"project_id": 1}),
@@ -153,6 +181,8 @@ class TestMCP(unittest.TestCase):
 
         with (
             patch("mcp.tools.list_attention_items", return_value={"attention_items": []}),
+            patch("mcp.tools.create_attention_item", return_value={"id": 1, "title": "Item"}),
+            patch("mcp.tools.update_attention_item", return_value={"id": 10, "title": "Updated item"}),
             patch("mcp.tools.list_company_status_periods", return_value={"company_status_periods": []}),
             patch("mcp.tools.list_company_status_items", return_value={"company_status_items": []}),
             patch("mcp.tools.list_project_milestones", return_value={"project_milestones": []}),
@@ -268,6 +298,47 @@ class TestMCP(unittest.TestCase):
             self.assertFalse(data["result"]["isError"])
             api_mock.assert_awaited_once()
             _, _, kwargs = api_mock.mock_calls[0]
+            self.assertTrue(kwargs["body"].startswith(":spin:"))
+
+    def test_add_message_without_project(self):
+        with patch("mcp.tools.create_message", return_value={"id": 9}) as api_mock:
+            response = self.client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 300,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "add_message",
+                        "arguments": {"room_id": 2, "user_id": 3, "body": "hi from private room"},
+                    },
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertFalse(data["result"]["isError"])
+            api_mock.assert_awaited_once_with(None, 2, 3, body="hi from private room", attachment=None)
+
+    def test_add_loading_message_without_project(self):
+        with patch("mcp.tools.create_message", return_value={"id": 10}) as api_mock:
+            response = self.client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 301,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "add_loading_message",
+                        "arguments": {"room_id": 2, "user_id": 3, "body": "working privately"},
+                    },
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertFalse(data["result"]["isError"])
+            api_mock.assert_awaited_once()
+            _, _, kwargs = api_mock.mock_calls[0]
+            self.assertEqual(kwargs.get("project_id"), None)
             self.assertTrue(kwargs["body"].startswith(":spin:"))
 
 
