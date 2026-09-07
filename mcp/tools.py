@@ -1634,14 +1634,22 @@ async def tree_based_project_directory_data(
     active: Any = None,
     page: int | None = None,
     per_page: int | None = None,
+    attachment_path: str | None = None,
+    attachment_url: str | None = None,
     **kwargs: Any,
 ) -> str:
     resolved_project_id = await _resolve_project_id(project_id, project_name)
     delete = _coerce_bool(delete)
+    file = await _resolve_attachment(attachment_path, attachment_url)
     if delete and item_id is not None:
         await delete_directory_item(resolved_project_id, item_id)
         return _format_result(None)
     if item_id is not None:
+        if file is not None:
+            result = await update_directory_item(
+                resolved_project_id, item_id, file=file
+            )
+            return _format_result(result)
         result = await get_directory_item(resolved_project_id, item_id)
         return _format_result(result)
     result = await list_directory_items(
@@ -3388,15 +3396,17 @@ _TOOL_METADATA = [
     ),
     (
         "tree_based_project_directory_data",
-        "List, get, or delete tree-based project directory items",
+        "List, get, delete, or upload a file to tree-based project directory items",
         {
             "type": "object",
             "properties": {
                 **_PROJECT_ID_PROPS,
-                "item_id": {"type": ["string", "integer"], "description": "Directory item ID for get/delete"},
+                "item_id": {"type": ["string", "integer"], "description": "Directory item ID for get/delete/upload"},
                 **_ACTIVE_PROP,
                 **_DELETE_PROP,
                 **_PAGINATION_PROPS,
+                "attachment_path": {"type": "string", "description": "Local file path to upload to an existing directory item (requires item_id)"},
+                "attachment_url": {"type": "string", "description": "URL of file to upload to an existing directory item (requires item_id)"},
             },
         },
     ),
