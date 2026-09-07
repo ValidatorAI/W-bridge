@@ -1,8 +1,12 @@
+import asyncio
 import unittest
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 
 from main import app
-from mcp.core import call_tool, hello, list_tools
+from mcp.core import call_tool, list_tools
+from mcp.tools import hello
 
 
 class TestMCP(unittest.TestCase):
@@ -21,15 +25,15 @@ class TestMCP(unittest.TestCase):
         self.assertIn("properties", hello_tool["inputSchema"])
 
     def test_call_tool_hello(self):
-        res = call_tool("hello", {"name": "Alice"})
+        res = asyncio.run(call_tool("hello", {"name": "Alice"}))
         self.assertFalse(res["isError"])
         self.assertEqual(res["content"], [{"type": "text", "text": "Hello, Alice!"}])
 
-        res_default = call_tool("hello", {})
+        res_default = asyncio.run(call_tool("hello", {}))
         self.assertFalse(res_default["isError"])
         self.assertEqual(res_default["content"], [{"type": "text", "text": "Hello, World!"}])
 
-        res_unknown = call_tool("unknown_tool", {})
+        res_unknown = asyncio.run(call_tool("unknown_tool", {}))
         self.assertTrue(res_unknown["isError"])
 
     def test_mcp_initialize(self):
@@ -130,36 +134,53 @@ class TestMCP(unittest.TestCase):
 
     def test_mcp_tools_call_categories(self):
         sample_tools = [
-            "decisions_waiting",
-            "blockers",
-            "company_status_period",
-            "priorities",
-            "project_milestones",
-            "project_bottlenecks",
-            "ProjectAllHandsTakeaway",
-            "external_knowledge_assets",
-            "ProjectObsidianNote",
-            "add_message",
-            "add_loading_message",
-            "edit_loading_message",
-            "delete_loading_message",
-            "add_action_message",
-            "add_decision_message",
+            ("decisions_waiting", {}),
+            ("blockers", {}),
+            ("company_status_period", {}),
+            ("priorities", {}),
+            ("project_milestones", {"project_id": 1}),
+            ("project_bottlenecks", {"project_id": 1}),
+            ("ProjectAllHandsTakeaway", {"project_id": 1}),
+            ("external_knowledge_assets", {"project_id": 1}),
+            ("ProjectObsidianNote", {"project_id": 1}),
+            ("add_message", {"project_id": 1, "room_id": 2, "user_id": 3, "body": "hi"}),
+            ("add_loading_message", {"project_id": 1, "room_id": 2, "user_id": 3}),
+            ("edit_loading_message", {"message_id": 4}),
+            ("delete_loading_message", {"message_id": 4}),
+            ("add_action_message", {"project_id": 1, "room_id": 2, "user_id": 3}),
+            ("add_decision_message", {"project_id": 1, "room_id": 2, "user_id": 3, "approval_request_id": 5}),
         ]
-        for name in sample_tools:
-            response = self.client.post(
-                "/mcp",
-                json={
-                    "jsonrpc": "2.0",
-                    "id": 100,
-                    "method": "tools/call",
-                    "params": {"name": name, "arguments": {}},
-                },
-            )
-            self.assertEqual(response.status_code, 200)
-            data = response.json()
-            self.assertFalse(data["result"]["isError"])
-            self.assertIn("Dummy result", data["result"]["content"][0]["text"])
+
+        with (
+            patch("mcp.tools.list_attention_items", return_value={"attention_items": []}),
+            patch("mcp.tools.list_company_status_periods", return_value={"company_status_periods": []}),
+            patch("mcp.tools.list_company_status_items", return_value={"company_status_items": []}),
+            patch("mcp.tools.list_project_milestones", return_value={"project_milestones": []}),
+            patch("mcp.tools.list_project_bottlenecks", return_value={"project_bottlenecks": []}),
+            patch("mcp.tools.list_all_hands_takeaways", return_value={"project_all_hands_takeaways": []}),
+            patch("mcp.tools.list_external_assets", return_value={"external_assets": []}),
+            patch("mcp.tools.list_obsidian_notes", return_value={"obsidian_notes": []}),
+            patch("mcp.tools.create_message", return_value={"id": 1}),
+            patch("mcp.tools.update_message_by_id", return_value={"id": 4}),
+            patch("mcp.tools.delete_message_by_id", return_value=None),
+            patch("mcp.tools.send_action", return_value={"status": "ok"}),
+            patch("mcp.tools.create_decision", return_value={"id": 5}),
+        ):
+            for name, arguments in sample_tools:
+                response = self.client.post(
+                    "/mcp",
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 100,
+                        "method": "tools/call",
+                        "params": {"name": name, "arguments": arguments},
+                    },
+                )
+                self.assertEqual(response.status_code, 200, f"Tool {name} failed")
+                data = response.json()
+                self.assertFalse(data["result"]["isError"], f"Tool {name} returned error: {data['result']}")
+                self.assertIn("content", data["result"])
+                self.assertTrue(len(data["result"]["content"]) > 0)
 
     def test_mcp_tools_call_hello(self):
         response = self.client.post(
@@ -207,6 +228,47 @@ class TestMCP(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         data = response.json()
         self.assertEqual(data["error"]["code"], -32700)
+
+    def test_mcp_tools_call_with_project_name_resolution(self):
+        with (
+            patch("mcp.tools.project_name_fuzzy_match", return_value={"id": 42, "name": "Acme"}) as fuzzy_mock,
+            patch("mcp.tools.list_project_milestones", return_value={"project_milestones": []}) as api_mock,
+        ):
+            response = self.client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 200,
+                    "method": "tools/call",
+                    "params": {"name": "project_milestones", "arguments": {"project_name": "Acme"}},
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertFalse(data["result"]["isError"])
+            fuzzy_mock.assert_awaited_once_with("Acme")
+            api_mock.assert_awaited_once_with(42, active=None, page=None, per_page=None)
+
+    def test_mcp_loading_message_prefixes_body(self):
+        with patch("mcp.tools.create_message", return_value={"id": 7}) as api_mock:
+            response = self.client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 201,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "add_loading_message",
+                        "arguments": {"project_id": 1, "room_id": 2, "user_id": 3, "body": "working"},
+                    },
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertFalse(data["result"]["isError"])
+            api_mock.assert_awaited_once()
+            _, _, kwargs = api_mock.mock_calls[0]
+            self.assertTrue(kwargs["body"].startswith(":spin:"))
 
 
 if __name__ == "__main__":

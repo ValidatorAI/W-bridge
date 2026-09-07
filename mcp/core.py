@@ -1,9 +1,11 @@
+import asyncio
+import inspect
 import traceback
 from typing import Any
 
 from db.database import SessionLocal
 from db.models import McpException
-from mcp.tools import TOOL_DEFINITIONS, TOOL_HANDLERS, hello
+from mcp.tools import TOOL_DEFINITIONS, TOOL_HANDLERS
 
 
 def list_tools() -> list[dict[str, Any]]:
@@ -26,7 +28,7 @@ def _persist_tool_exception(tool_name: str, exc: Exception) -> None:
         session.close()
 
 
-def call_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
+async def call_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
     if name not in TOOL_HANDLERS:
         return {
             "content": [{"type": "text", "text": f"Tool '{name}' not found."}],
@@ -37,7 +39,11 @@ def call_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[str, A
     args = arguments or {}
 
     try:
-        result = handler(**args)
+        if inspect.iscoroutinefunction(handler):
+            result = await handler(**args)
+        else:
+            result = handler(**args)
+
         if isinstance(result, str):
             text_result = result
         else:

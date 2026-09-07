@@ -61,7 +61,7 @@ async def mcp_endpoint(request: Request) -> Response:
 			},
 		)
 
-	response_data = handle_mcp_request(payload)
+	response_data = await handle_mcp_request(payload)
 	if response_data is None:
 		return Response(status_code=204)
 	return JSONResponse(content=response_data)
