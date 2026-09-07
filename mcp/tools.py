@@ -105,6 +105,16 @@ def project_milestones(**kwargs: Any) -> str:
     return "Dummy result for project_milestones"
 
 
+def add_project_milestone(**kwargs: Any) -> str:
+    print(f"[Tool: add_project_milestone] Called with params: {kwargs}")
+    return "Dummy result for add_project_milestone"
+
+
+def edit_project_milestone(**kwargs: Any) -> str:
+    print(f"[Tool: edit_project_milestone] Called with params: {kwargs}")
+    return "Dummy result for edit_project_milestone"
+
+
 # ============================================================================
 # 4. Project Status
 # ============================================================================
@@ -114,9 +124,29 @@ def project_bottlenecks(**kwargs: Any) -> str:
     return "Dummy result for project_bottlenecks"
 
 
+def add_project_bottleneck(**kwargs: Any) -> str:
+    print(f"[Tool: add_project_bottleneck] Called with params: {kwargs}")
+    return "Dummy result for add_project_bottleneck"
+
+
+def edit_project_bottleneck(**kwargs: Any) -> str:
+    print(f"[Tool: edit_project_bottleneck] Called with params: {kwargs}")
+    return "Dummy result for edit_project_bottleneck"
+
+
 def project_todos(**kwargs: Any) -> str:
     print(f"[Tool: project_todos] Called with params: {kwargs}")
     return "Dummy result for project_todos"
+
+
+def add_project_todo(**kwargs: Any) -> str:
+    print(f"[Tool: add_project_todo] Called with params: {kwargs}")
+    return "Dummy result for add_project_todo"
+
+
+def edit_project_todo(**kwargs: Any) -> str:
+    print(f"[Tool: edit_project_todo] Called with params: {kwargs}")
+    return "Dummy result for edit_project_todo"
 
 
 def project_knowledge_items(**kwargs: Any) -> str:
@@ -231,9 +261,21 @@ TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
     "learnings": learnings,
     # Project Overview
     "project_milestones": project_milestones,
+    "add_project_milestone": add_project_milestone,
+    "AddProjectMilestone": add_project_milestone,
+    "edit_project_milestone": edit_project_milestone,
+    "EditProjectMilestone": edit_project_milestone,
     # Project Status
     "project_bottlenecks": project_bottlenecks,
+    "add_project_bottleneck": add_project_bottleneck,
+    "AddProjectBottleneck": add_project_bottleneck,
+    "edit_project_bottleneck": edit_project_bottleneck,
+    "EditProjectBottleneck": edit_project_bottleneck,
     "project_todos": project_todos,
+    "add_project_todo": add_project_todo,
+    "AddProjectTodo": add_project_todo,
+    "edit_project_todo": edit_project_todo,
+    "EditProjectTodo": edit_project_todo,
     "project_knowledge_items": project_knowledge_items,
     # Project All Hands
     "ProjectAllHandsTakeaway": project_all_hands_takeaway,
@@ -288,8 +330,20 @@ _TOOL_METADATA = [
     ("decisions", "Company status decisions items", {"type": "object", "properties": {}}),
     ("learnings", "Company status learnings items", {"type": "object", "properties": {}}),
     ("project_milestones", "Project overview milestones", {"type": "object", "properties": {}}),
+    ("add_project_milestone", "Add a project milestone", {"type": "object", "properties": {}}),
+    ("AddProjectMilestone", "Add a project milestone", {"type": "object", "properties": {}}),
+    ("edit_project_milestone", "Edit a project milestone", {"type": "object", "properties": {}}),
+    ("EditProjectMilestone", "Edit a project milestone", {"type": "object", "properties": {}}),
     ("project_bottlenecks", "Project status bottlenecks", {"type": "object", "properties": {}}),
+    ("add_project_bottleneck", "Add a project bottleneck", {"type": "object", "properties": {}}),
+    ("AddProjectBottleneck", "Add a project bottleneck", {"type": "object", "properties": {}}),
+    ("edit_project_bottleneck", "Edit a project bottleneck", {"type": "object", "properties": {}}),
+    ("EditProjectBottleneck", "Edit a project bottleneck", {"type": "object", "properties": {}}),
     ("project_todos", "Project status todos", {"type": "object", "properties": {}}),
+    ("add_project_todo", "Add a project todo", {"type": "object", "properties": {}}),
+    ("AddProjectTodo", "Add a project todo", {"type": "object", "properties": {}}),
+    ("edit_project_todo", "Edit a project todo", {"type": "object", "properties": {}}),
+    ("EditProjectTodo", "Edit a project todo", {"type": "object", "properties": {}}),
     ("project_knowledge_items", "Project status knowledge items", {"type": "object", "properties": {}}),
     ("ProjectAllHandsTakeaway", "Project all hands takeaway items", {"type": "object", "properties": {}}),
     ("ProjectAllHandsActionItem", "Project all hands action items", {"type": "object", "properties": {}}),
