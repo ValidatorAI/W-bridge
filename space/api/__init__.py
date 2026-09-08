@@ -35,6 +35,13 @@ from .company_status_periods import (
     list_company_status_periods,
     update_company_status_period,
 )
+from .approval_requests import (
+    create_approval_request,
+    delete_approval_request,
+    get_approval_request,
+    list_approval_requests,
+    update_approval_request,
+)
 from .decisions import create_decision
 from .directory_items import (
     create_directory_item,
@@ -132,6 +139,7 @@ __all__ = [
     "create_all_hands_action_item",
     "create_all_hands_decision",
     "create_all_hands_takeaway",
+    "create_approval_request",
     "create_attention_item",
     "create_company_status_item",
     "create_company_status_period",
@@ -149,6 +157,7 @@ __all__ = [
     "delete_all_hands_action_item",
     "delete_all_hands_decision",
     "delete_all_hands_takeaway",
+    "delete_approval_request",
     "delete_attention_item",
     "delete_company_status_item",
     "delete_company_status_period",
@@ -169,6 +178,7 @@ __all__ = [
     "get_all_hands_action_item",
     "get_all_hands_decision",
     "get_all_hands_takeaway",
+    "get_approval_request",
     "get_attention_item",
     "get_company_status_item",
     "get_company_status_period",
@@ -192,6 +202,7 @@ __all__ = [
     "list_all_hands_action_items",
     "list_all_hands_decisions",
     "list_all_hands_takeaways",
+    "list_approval_requests",
     "list_attention_items",
     "list_company_status_items",
     "list_company_status_items_by_period",
@@ -215,6 +226,7 @@ __all__ = [
     "update_all_hands_action_item",
     "update_all_hands_decision",
     "update_all_hands_takeaway",
+    "update_approval_request",
     "update_attention_item",
     "update_company_status_item",
     "update_company_status_period",

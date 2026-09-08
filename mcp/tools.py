@@ -19,6 +19,7 @@ from space.api import (
     create_all_hands_action_item,
     create_all_hands_decision,
     create_all_hands_takeaway,
+    create_approval_request,
     create_attention_item,
     create_company_status_item,
     create_company_status_period,
@@ -36,6 +37,7 @@ from space.api import (
     delete_all_hands_action_item,
     delete_all_hands_decision,
     delete_all_hands_takeaway,
+    delete_approval_request,
     delete_attention_item,
     delete_company_status_item,
     delete_company_status_period,
@@ -54,6 +56,7 @@ from space.api import (
     get_all_hands_action_item,
     get_all_hands_decision,
     get_all_hands_takeaway,
+    get_approval_request,
     get_attention_item,
     get_company_status_item,
     get_company_status_period,
@@ -72,6 +75,7 @@ from space.api import (
     list_all_hands_action_items,
     list_all_hands_decisions,
     list_all_hands_takeaways,
+    list_approval_requests,
     list_attention_items,
     list_company_status_items,
     list_company_status_periods,
@@ -88,6 +92,7 @@ from space.api import (
     update_all_hands_action_item,
     update_all_hands_decision,
     update_all_hands_takeaway,
+    update_approval_request,
     update_attention_item,
     update_company_status_item,
     update_company_status_period,
@@ -2052,6 +2057,182 @@ async def add_decision_message(
 
 
 # ============================================================================
+# 8. Approval Request Tools
+# ============================================================================
+
+async def add_approve_request_with_message(
+    project_id: Any = None,
+    project_name: str | None = None,
+    room_id: Any = None,
+    room_name: str | None = None,
+    user_id: Any = None,
+    user_name: str | None = None,
+    bot_id: Any = None,
+    bot_name: str | None = None,
+    *,
+    body: str,
+    attachment_path: str | None = None,
+    attachment_url: str | None = None,
+    request_type: str | None = None,
+    status: str | None = None,
+    agent_id: Any = None,
+    requested_at: str | None = None,
+    resolved_at: str | None = None,
+    resolved_by_id: Any = None,
+    payload: dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = await _resolve_project_id(project_id, project_name)
+    resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name)
+    sender_id = await _resolve_sender_id(
+        resolved_project_id, user_id, user_name, bot_id, bot_name
+    )
+    attachment = await _resolve_attachment(attachment_path, attachment_url)
+    message = await create_message(
+        resolved_project_id,
+        resolved_room_id,
+        sender_id,
+        body=body,
+        attachment=attachment,
+    )
+    message_id = message.get("id")
+    approval_request = await create_approval_request(
+        resolved_project_id,
+        resolved_room_id,
+        request_type=request_type,
+        status=status,
+        message_id=message_id,
+        agent_id=agent_id,
+        requested_at=requested_at,
+        resolved_at=resolved_at,
+        resolved_by_id=resolved_by_id,
+        payload=payload,
+    )
+    return _format_result({"message": message, "approval_request": approval_request})
+
+
+async def approval_requests(
+    project_id: Any = None,
+    project_name: str | None = None,
+    room_id: Any = None,
+    room_name: str | None = None,
+    *,
+    page: int | None = None,
+    per_page: int | None = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = await _resolve_project_id(project_id, project_name)
+    resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name)
+    result = await list_approval_requests(
+        resolved_project_id,
+        resolved_room_id,
+        page=page,
+        per_page=per_page,
+    )
+    return _format_result(result)
+
+
+async def get_approval_request_tool(
+    approval_request_id: Any,
+    project_id: Any = None,
+    project_name: str | None = None,
+    room_id: Any = None,
+    room_name: str | None = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = await _resolve_project_id(project_id, project_name)
+    resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name)
+    result = await get_approval_request(
+        resolved_project_id, resolved_room_id, approval_request_id
+    )
+    return _format_result(result)
+
+
+async def add_approval_request(
+    project_id: Any = None,
+    project_name: str | None = None,
+    room_id: Any = None,
+    room_name: str | None = None,
+    *,
+    request_type: str | None = None,
+    status: str | None = None,
+    message_id: Any = None,
+    agent_id: Any = None,
+    requested_at: str | None = None,
+    resolved_at: str | None = None,
+    resolved_by_id: Any = None,
+    payload: dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = await _resolve_project_id(project_id, project_name)
+    resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name)
+    result = await create_approval_request(
+        resolved_project_id,
+        resolved_room_id,
+        request_type=request_type,
+        status=status,
+        message_id=message_id,
+        agent_id=agent_id,
+        requested_at=requested_at,
+        resolved_at=resolved_at,
+        resolved_by_id=resolved_by_id,
+        payload=payload,
+    )
+    return _format_result(result)
+
+
+async def edit_approval_request(
+    approval_request_id: Any,
+    project_id: Any = None,
+    project_name: str | None = None,
+    room_id: Any = None,
+    room_name: str | None = None,
+    *,
+    request_type: str | None = None,
+    status: str | None = None,
+    message_id: Any = None,
+    agent_id: Any = None,
+    requested_at: str | None = None,
+    resolved_at: str | None = None,
+    resolved_by_id: Any = None,
+    payload: dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = await _resolve_project_id(project_id, project_name)
+    resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name)
+    result = await update_approval_request(
+        resolved_project_id,
+        resolved_room_id,
+        approval_request_id,
+        request_type=request_type,
+        status=status,
+        message_id=message_id,
+        agent_id=agent_id,
+        requested_at=requested_at,
+        resolved_at=resolved_at,
+        resolved_by_id=resolved_by_id,
+        payload=payload,
+    )
+    return _format_result(result)
+
+
+async def delete_approval_request_tool(
+    approval_request_id: Any,
+    project_id: Any = None,
+    project_name: str | None = None,
+    room_id: Any = None,
+    room_name: str | None = None,
+    **kwargs: Any,
+) -> str:
+    resolved_project_id = await _resolve_project_id(project_id, project_name)
+    resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name)
+    await delete_approval_request(
+        resolved_project_id, resolved_room_id, approval_request_id
+    )
+    return _format_result(None)
+
+
+# ============================================================================
 # Tool Registry and Definitions
 # ============================================================================
 
@@ -2277,6 +2458,19 @@ TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
     "AddActionMessage": add_action_message,
     "add_decision_message": add_decision_message,
     "AddDecisionMessage": add_decision_message,
+    # Approval Request Tools
+    "add_approve_request_with_message": add_approve_request_with_message,
+    "AddApproveRequestWithMessage": add_approve_request_with_message,
+    "approval_requests": approval_requests,
+    "ApprovalRequests": approval_requests,
+    "get_approval_request": get_approval_request_tool,
+    "GetApprovalRequest": get_approval_request_tool,
+    "add_approval_request": add_approval_request,
+    "AddApprovalRequest": add_approval_request,
+    "edit_approval_request": edit_approval_request,
+    "EditApprovalRequest": edit_approval_request,
+    "delete_approval_request": delete_approval_request_tool,
+    "DeleteApprovalRequest": delete_approval_request_tool,
 }
 
 _TOOL_METADATA = [
@@ -3671,6 +3865,108 @@ _TOOL_METADATA = [
             "required": ["approval_request_id"],
         },
     ),
+    # Approval Request Tools
+    (
+        "add_approve_request_with_message",
+        "Create a message in a room and attach an approval request to it",
+        {
+            "type": "object",
+            "properties": {
+                **_PROJECT_ID_PROPS,
+                **_ROOM_ID_PROPS,
+                **_SENDER_PROPS,
+                "body": {"type": "string", "description": "Message body"},
+                "attachment_path": {"type": "string", "description": "Local file path to attach"},
+                "attachment_url": {"type": "string", "description": "URL of file to attach"},
+                "request_type": {"type": "string", "description": "Type of approval request, e.g. decision or knowledge_proposal"},
+                "status": {"type": "string", "description": "Status: pending, approved, denied, or canceled", "default": "pending"},
+                "agent_id": {"type": ["string", "integer"], "description": "Optional agent ID"},
+                "requested_at": {"type": "string", "description": "Optional requested timestamp (ISO 8601)"},
+                "resolved_at": {"type": "string", "description": "Optional resolved timestamp (ISO 8601)"},
+                "resolved_by_id": {"type": ["string", "integer"], "description": "Optional resolver user ID"},
+                "payload": {"type": "object", "description": "Optional additional payload"},
+            },
+            "required": ["room_id", "body"],
+        },
+    ),
+    (
+        "approval_requests",
+        "List approval requests in a room",
+        {
+            "type": "object",
+            "properties": {
+                **_PROJECT_ID_PROPS,
+                **_ROOM_ID_PROPS,
+                **_PAGINATION_PROPS,
+            },
+        },
+    ),
+    (
+        "get_approval_request",
+        "Get a single approval request in a room",
+        {
+            "type": "object",
+            "properties": {
+                **_PROJECT_ID_PROPS,
+                **_ROOM_ID_PROPS,
+                "approval_request_id": {"type": ["string", "integer"], "description": "Approval request ID"},
+            },
+            "required": ["approval_request_id"],
+        },
+    ),
+    (
+        "add_approval_request",
+        "Create an approval request in a room",
+        {
+            "type": "object",
+            "properties": {
+                **_PROJECT_ID_PROPS,
+                **_ROOM_ID_PROPS,
+                "request_type": {"type": "string", "description": "Type of approval request, e.g. decision or knowledge_proposal"},
+                "status": {"type": "string", "description": "Status: pending, approved, denied, or canceled", "default": "pending"},
+                "message_id": {"type": ["string", "integer"], "description": "Optional parent message ID"},
+                "agent_id": {"type": ["string", "integer"], "description": "Optional agent ID"},
+                "requested_at": {"type": "string", "description": "Optional requested timestamp (ISO 8601)"},
+                "resolved_at": {"type": "string", "description": "Optional resolved timestamp (ISO 8601)"},
+                "resolved_by_id": {"type": ["string", "integer"], "description": "Optional resolver user ID"},
+                "payload": {"type": "object", "description": "Optional additional payload"},
+            },
+        },
+    ),
+    (
+        "edit_approval_request",
+        "Update an approval request in a room",
+        {
+            "type": "object",
+            "properties": {
+                **_PROJECT_ID_PROPS,
+                **_ROOM_ID_PROPS,
+                "approval_request_id": {"type": ["string", "integer"], "description": "Approval request ID"},
+                "request_type": {"type": "string", "description": "Type of approval request, e.g. decision or knowledge_proposal"},
+                "status": {"type": "string", "description": "Status: pending, approved, denied, or canceled"},
+                "message_id": {"type": ["string", "integer"], "description": "Optional parent message ID"},
+                "agent_id": {"type": ["string", "integer"], "description": "Optional agent ID"},
+                "requested_at": {"type": "string", "description": "Optional requested timestamp (ISO 8601)"},
+                "resolved_at": {"type": "string", "description": "Optional resolved timestamp (ISO 8601)"},
+                "resolved_by_id": {"type": ["string", "integer"], "description": "Optional resolver user ID"},
+                "payload": {"type": "object", "description": "Optional additional payload"},
+            },
+            "required": ["approval_request_id"],
+        },
+    ),
+    (
+        "delete_approval_request",
+        "Delete an approval request from a room",
+        {
+            "type": "object",
+            "properties": {
+                **_PROJECT_ID_PROPS,
+                **_ROOM_ID_PROPS,
+                "approval_request_id": {"type": ["string", "integer"], "description": "Approval request ID"},
+            },
+            "required": ["approval_request_id"],
+        },
+    ),
 ]
 
 # Register PascalCase aliases with the same schemas as their snake_case counterparts.
@@ -3728,6 +4024,12 @@ _ALIASES = [
     ("DeleteLoadingMessage", "delete_loading_message"),
     ("AddActionMessage", "add_action_message"),
     ("AddDecisionMessage", "add_decision_message"),
+    ("AddApproveRequestWithMessage", "add_approve_request_with_message"),
+    ("ApprovalRequests", "approval_requests"),
+    ("GetApprovalRequest", "get_approval_request"),
+    ("AddApprovalRequest", "add_approval_request"),
+    ("EditApprovalRequest", "edit_approval_request"),
+    ("DeleteApprovalRequest", "delete_approval_request"),
 ]
 
 _SCHEMAS_BY_NAME = {name: schema for name, _, schema in _TOOL_METADATA}

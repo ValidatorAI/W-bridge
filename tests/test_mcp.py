@@ -142,6 +142,13 @@ class TestMCP(unittest.TestCase):
             "delete_loading_message",
             "add_action_message",
             "add_decision_message",
+            # Approval Request Tools
+            "add_approve_request_with_message",
+            "approval_requests",
+            "get_approval_request",
+            "add_approval_request",
+            "edit_approval_request",
+            "delete_approval_request",
         ]
         for name in expected_tools:
             self.assertIn(name, tool_names)
@@ -211,6 +218,67 @@ class TestMCP(unittest.TestCase):
                 self.assertFalse(data["result"]["isError"], f"Tool {name} returned error: {data['result']}")
                 self.assertIn("content", data["result"])
                 self.assertTrue(len(data["result"]["content"]) > 0)
+
+    def test_mcp_tools_call_approval_requests(self):
+        sample_tools = [
+            ("approval_requests", {"project_id": 1, "room_id": 2}),
+            ("get_approval_request", {"project_id": 1, "room_id": 2, "approval_request_id": 5}),
+            ("add_approval_request", {"project_id": 1, "room_id": 2, "request_type": "decision"}),
+            ("edit_approval_request", {"project_id": 1, "room_id": 2, "approval_request_id": 5, "status": "approved"}),
+            ("delete_approval_request", {"project_id": 1, "room_id": 2, "approval_request_id": 5}),
+        ]
+
+        with (
+            patch("mcp.tools.list_approval_requests", return_value={"approval_requests": []}),
+            patch("mcp.tools.get_approval_request", return_value={"id": 5}),
+            patch("mcp.tools.create_approval_request", return_value={"id": 6}),
+            patch("mcp.tools.update_approval_request", return_value={"id": 5, "status": "approved"}),
+            patch("mcp.tools.delete_approval_request", return_value=None),
+        ):
+            for name, arguments in sample_tools:
+                response = self.client.post(
+                    "/mcp",
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 100,
+                        "method": "tools/call",
+                        "params": {"name": name, "arguments": arguments},
+                    },
+                )
+                self.assertEqual(response.status_code, 200, f"Tool {name} failed")
+                data = response.json()
+                self.assertFalse(data["result"]["isError"], f"Tool {name} returned error: {data['result']}")
+                self.assertIn("content", data["result"])
+                self.assertTrue(len(data["result"]["content"]) > 0)
+
+    def test_mcp_tools_call_add_approve_request_with_message(self):
+        with (
+            patch("mcp.tools.create_message", return_value={"id": 7}),
+            patch("mcp.tools.create_approval_request", return_value={"id": 8, "message_id": 7}),
+        ):
+            response = self.client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 101,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "add_approve_request_with_message",
+                        "arguments": {
+                            "project_id": 1,
+                            "room_id": 2,
+                            "user_id": 3,
+                            "body": "Please approve this",
+                            "request_type": "decision",
+                        },
+                    },
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertFalse(data["result"]["isError"], data["result"])
+            self.assertIn("content", data["result"])
+            self.assertTrue(len(data["result"]["content"]) > 0)
 
     def test_mcp_tools_call_hello(self):
         response = self.client.post(

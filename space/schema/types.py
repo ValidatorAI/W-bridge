@@ -79,6 +79,13 @@ class ApprovalRequest(TypedDict, total=False):
     resolved_by_id: int | None
 
 
+class ApprovalRequestList(TypedDict, total=False):
+    count: int
+    page: int
+    per_page: int
+    approval_requests: list[ApprovalRequest]
+
+
 class AttentionItem(TypedDict, total=False):
     id: int
     category: str
