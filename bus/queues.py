@@ -1,6 +1,8 @@
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
+
+from helpers.environment import BASE_HERMES_PROFILE
 
 
 @dataclass
@@ -10,7 +12,7 @@ class ChatCompletionQueueItem:
     payload: dict[str, Any]
     session_id: str | None = None
     session_key: str | None = None
-    profile: str | None = "default"
+    profile: str = BASE_HERMES_PROFILE
 
 
 @dataclass
@@ -19,7 +21,7 @@ class SendChatHistoryQueueItem:
 
     history: list[dict[str, Any]]
     session_id: str | None = None
-    profile: str | None = "default"
+    profile: str = BASE_HERMES_PROFILE
 
 
 @dataclass
@@ -29,7 +31,7 @@ class SpaceEventQueueItem:
     space_event_id: str | None
     event_type: str | None
     event_data: dict[str, Any] | None
-    profile: str = "default"
+    profile: str = field(default=BASE_HERMES_PROFILE)
 
 
 # Queue for requests targeting agent.hermes.chat_completions

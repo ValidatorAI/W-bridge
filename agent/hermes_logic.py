@@ -2,7 +2,7 @@ import json
 from typing import Any
 
 from agent.hermes import chat_completions
-from helpers.environment import MODEL
+from helpers.environment import BASE_HERMES_PROFILE, MODEL
 
 base_format_hint = "For formatting do not use markup, you must use HTML tags like <ul>,<li>,<a>,<b>,<pre>, specially for codes use <pre> tag"
 base_kanban_bord = "use anban board per room, if room is not created yesm create one, this would be used for collaboration"
@@ -44,7 +44,7 @@ async def send_chat(message: str, history: list | None = None) -> str:
 
     response = await chat_completions(
         {"model": MODEL, "messages": messages},
-        profile="default",
+        profile=BASE_HERMES_PROFILE,
     )
 
     return _extract_reply_text(response)
@@ -67,7 +67,7 @@ async def send_chat_history(
     response = await chat_completions(
         {"model": MODEL, "messages": messages},
         session_id=session_id,
-        profile=profile,
+        profile=profile or BASE_HERMES_PROFILE,
     )
 
     return _extract_reply_text(response), response

@@ -65,7 +65,6 @@ async def space_events(
 			space_event_id=space_event_id,
 			event_type=event.event_type,
 			event_data=event.event_data,
-			profile="default",
 		)
 	)
 
