@@ -20,8 +20,8 @@ def build_space_event_message(
     event_data = event_data or {}
     serialized = json.dumps(event_data, ensure_ascii=False, default=str)
     if event_type:
-        return f"Space event ({event_type}): {serialized}"
-    return f"Space event: {serialized}"
+        return f"New W-space event\n({event_type}): {serialized}"
+    return f"New W-space event\n{serialized}"
 
 
 # ----------------------------- Hermes-version -----------------------------
