@@ -25,6 +25,7 @@ MAX_REPLY_FILE_UPLOADS = int(os.environ.get("MAX_REPLY_FILE_UPLOADS", "5"))
 MAX_REPLY_FILE_UPLOAD_BYTES = int(os.environ.get("MAX_REPLY_FILE_UPLOAD_BYTES", str(20 * 1024 * 1024)))
 
 BASE_HERMES_PROFILE = os.environ.get("BASE_HERMES_PROFILE", "delegator")
+HERMES_MAX_ACTIVE_AGENTS = int(os.environ.get("HERMES_MAX_ACTIVE_AGENTS", "2"))
 
 def _default_sqlite_path() -> str:
     # In Docker use a volume-friendly location; local runs stay in the project directory.

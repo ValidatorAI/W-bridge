@@ -2,8 +2,9 @@ import asyncio
 import logging
 
 from agent.hermes import api_status_summary_get
-from bus.executors import run_chat_completation, run_send_chat_history, run_space_event
-from bus.queues import chat_completions_queue, send_chat_history_queue, space_events_queue
+from bus.executors import run_space_event
+from bus.queues import space_events_queue
+from helpers.environment import HERMES_MAX_ACTIVE_AGENTS
 
 
 logger = logging.getLogger(__name__)
@@ -12,34 +13,6 @@ CRON_INTERVAL_SECONDS = 3
 
 _cron_task: asyncio.Task[None] | None = None
 _stop_event: asyncio.Event | None = None
-
-
-async def _process_chat_completions_once() -> bool:
-    try:
-        item = chat_completions_queue.get_nowait()
-    except asyncio.QueueEmpty:
-        logger.debug("chat_completions_queue is empty")
-        return False
-
-    try:
-        await run_chat_completation(item)
-        return True
-    finally:
-        chat_completions_queue.task_done()
-
-
-async def _process_send_chat_history_once() -> bool:
-    try:
-        item = send_chat_history_queue.get_nowait()
-    except asyncio.QueueEmpty:
-        logger.debug("send_chat_history_queue is empty")
-        return False
-
-    try:
-        await run_send_chat_history(item)
-        return True
-    finally:
-        send_chat_history_queue.task_done()
 
 
 async def _process_space_events_once() -> bool:
@@ -60,22 +33,18 @@ async def cron() -> None:
     """Cron job entrypoint.
 
     Order:
-    1) Check whether queue(s) have pending items.
+    1) Check whether the queue has pending items.
     2) If pending work exists, check Hermes status.
-    3) Drain one item from the busiest queue each tick.
+    3) Drain one item from the queue each tick.
     """
-    chat_queue_size = chat_completions_queue.qsize()
-    history_queue_size = send_chat_history_queue.qsize()
     space_event_queue_size = space_events_queue.qsize()
 
-    if chat_queue_size == 0 and history_queue_size == 0 and space_event_queue_size == 0:
+    if space_event_queue_size == 0:
         logger.debug("bus.cron tick: no pending queue items")
         return
 
     logger.info(
-        "bus.cron pending items: chat_completions=%s send_chat_history=%s space_events=%s",
-        chat_queue_size,
-        history_queue_size,
+        "bus.cron pending items: space_events=%s",
         space_event_queue_size,
     )
 
@@ -88,25 +57,16 @@ async def cron() -> None:
         status.get("active_sessions"),
     )
 
-    if status.get("active_agents") == 0:
-        logger.warning("No active agents available in Hermes")
+    active_agents = status.get("active_agents")
+    if active_agents is None or active_agents >= HERMES_MAX_ACTIVE_AGENTS:
+        logger.warning(
+            "Skipping space event processing: active_agents=%s >= threshold=%s",
+            active_agents,
+            HERMES_MAX_ACTIVE_AGENTS,
+        )
         return
 
-    # Choose the busiest queue. If there is a tie, prefer space events first,
-    # then chat completions, then send-chat-history.
-    queue_sizes = {
-        "space_events": space_event_queue_size,
-        "chat_completions": chat_queue_size,
-        "send_chat_history": history_queue_size,
-    }
-    largest_queue = max(queue_sizes, key=lambda key: (queue_sizes[key], key))
-
-    if largest_queue == "space_events":
-        await _process_space_events_once()
-    elif largest_queue == "chat_completions":
-        await _process_chat_completions_once()
-    else:
-        await _process_send_chat_history_once()
+    await _process_space_events_once()
 
 
 async def pooling_normal_message_cron() -> None:

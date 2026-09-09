@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text, func
@@ -25,8 +26,8 @@ class SpaceEvent(Base):
     group_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     event_data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    stored_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    sent_date: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    stored_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    sent_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     result: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
