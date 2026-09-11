@@ -99,10 +99,11 @@ async def _request(
     session_key: str | None = None,
     profile: str | None = None,
     extra_headers: dict[str, str] | None = None,
+    timeout: float | None = REQUEST_TIMEOUT,
 ) -> dict[str, Any]:
     url = _build_url(path, profile)
     try:
-        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as http_client:
+        async with httpx.AsyncClient(timeout=timeout) as http_client:
             response = await http_client.request(
                 method,
                 url,
@@ -185,6 +186,7 @@ async def chat_completions(
     session_id: str | None = None,
     session_key: str | None = None,
     profile: str | None = None,
+    timeout: float | None = REQUEST_TIMEOUT,
 ) -> dict[str, Any]:
     return await _request(
         "POST",
@@ -193,6 +195,7 @@ async def chat_completions(
         session_id=session_id,
         session_key=session_key,
         profile=profile,
+        timeout=timeout,
     )
 
 

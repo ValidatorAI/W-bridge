@@ -11,6 +11,21 @@ MASTER_KEY_TOKEN = os.environ.get("MASTER_KEY_TOKEN", "")
 MODEL = os.environ.get("MODEL", "deepseek-v4-flash")
 HERMES_HTTP_TIMEOUT = float(os.environ.get("HERMES_HTTP_TIMEOUT", "60"))
 
+
+def _parse_optional_timeout(raw_value: str, fallback: float) -> float | None:
+    """Parse timeout from env; supports numeric values and 'none' for no timeout."""
+    cleaned = (raw_value or "").strip().lower()
+    if cleaned in {"none", "null", "off", "false", "infinite", "infinity", ""}:
+        return None
+    try:
+        return float(cleaned)
+    except ValueError:
+        return fallback
+
+
+def _env_bool(name: str, default: str = "False") -> bool:
+    return os.environ.get(name, default).strip().lower() in {"true", "1", "yes", "on"}
+
 ROOM_BASE_URL = os.environ.get("ROOM_BASE_URL", "https://chat.nvgtrs.io").rstrip("/")
 PORT = os.environ.get("PORT", "80")
 RELOAD = os.environ.get("RELOAD", "False")
@@ -26,6 +41,11 @@ MAX_REPLY_FILE_UPLOAD_BYTES = int(os.environ.get("MAX_REPLY_FILE_UPLOAD_BYTES", 
 
 BASE_HERMES_PROFILE = os.environ.get("BASE_HERMES_PROFILE", "delegator")
 HERMES_MAX_ACTIVE_AGENTS = int(os.environ.get("HERMES_MAX_ACTIVE_AGENTS", "2"))
+SPACE_EVENT_HERMES_TIMEOUT = _parse_optional_timeout(
+    os.environ.get("SPACE_EVENT_HERMES_TIMEOUT", "none"),
+    HERMES_HTTP_TIMEOUT,
+)
+SPACE_EVENT_FIRE_AND_FORGET = _env_bool("SPACE_EVENT_FIRE_AND_FORGET", "true")
 
 def _default_sqlite_path() -> str:
     # In Docker use a volume-friendly location; local runs stay in the project directory.
