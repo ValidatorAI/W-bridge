@@ -1,7 +1,8 @@
 from collections.abc import AsyncIterator
+import json as json_lib
 import os
 import traceback
-from typing import Any
+from typing import Any, BinaryIO
 
 import httpx
 from db.exception_store import persist_api_exception
@@ -11,6 +12,7 @@ from helpers.environment import API_SERVER_KEY, BASE_URI, HERMES_HTTP_TIMEOUT
 # --- Configuration ---------------------------------------------------
 REQUEST_TIMEOUT = HERMES_HTTP_TIMEOUT
 STATUS_BASE_URI = os.environ.get("STATUS_BASE_URI", "http://127.0.0.1:9119").rstrip("/")
+FileUpload = tuple[str, BinaryIO | bytes, str] | tuple[str, BinaryIO | bytes]
 
 
 def _normalize_profile(profile: str | None) -> str:
@@ -35,11 +37,11 @@ def _auth_headers(
     session_id: str | None = None,
     session_key: str | None = None,
     extra_headers: dict[str, str] | None = None,
+    include_json_content_type: bool = True,
 ) -> dict[str, str]:
-    headers: dict[str, str] = {
-        "Authorization": f"Bearer {API_SERVER_KEY}",
-        "Content-Type": "application/json",
-    }
+    headers: dict[str, str] = {"Authorization": f"Bearer {API_SERVER_KEY}"}
+    if include_json_content_type:
+        headers["Content-Type"] = "application/json"
     if session_id:
         headers["X-Hermes-Session-Id"] = session_id
     if session_key:
@@ -66,6 +68,8 @@ def _persist_hermes_exception(
     endpoint: str,
     params: dict[str, Any] | None,
     json_payload: dict[str, Any] | None,
+    data_payload: dict[str, Any] | None,
+    file_fields: list[str] | None,
     profile: str | None,
     session_id: str | None,
     session_key: str | None,
@@ -82,6 +86,8 @@ def _persist_hermes_exception(
         request_context={
             "params": params,
             "json": json_payload,
+            "data": data_payload,
+            "file_fields": file_fields,
             "profile": profile,
             "session_id": session_id,
             "has_session_key": bool(session_key),
@@ -95,6 +101,8 @@ async def _request(
     *,
     json: dict[str, Any] | None = None,
     params: dict[str, Any] | None = None,
+    data: dict[str, Any] | None = None,
+    files: dict[str, FileUpload] | None = None,
     session_id: str | None = None,
     session_key: str | None = None,
     profile: str | None = None,
@@ -109,10 +117,13 @@ async def _request(
                 url,
                 json=json,
                 params=params,
+                data=data,
+                files=files,
                 headers=_auth_headers(
                     session_id=session_id,
                     session_key=session_key,
                     extra_headers=extra_headers,
+                    include_json_content_type=files is None and data is None,
                 ),
             )
             response.raise_for_status()
@@ -125,6 +136,51 @@ async def _request(
             endpoint=url,
             params=params,
             json_payload=json,
+            data_payload=data,
+            file_fields=sorted(files.keys()) if files else None,
+            profile=profile,
+            session_id=session_id,
+            session_key=session_key,
+            exc=exc,
+        )
+        raise
+
+
+async def _request_bytes(
+    method: str,
+    path: str,
+    *,
+    params: dict[str, Any] | None = None,
+    session_id: str | None = None,
+    session_key: str | None = None,
+    profile: str | None = None,
+    extra_headers: dict[str, str] | None = None,
+    timeout: float | None = REQUEST_TIMEOUT,
+) -> tuple[bytes, dict[str, str]]:
+    url = _build_url(path, profile)
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as http_client:
+            response = await http_client.request(
+                method,
+                url,
+                params=params,
+                headers=_auth_headers(
+                    session_id=session_id,
+                    session_key=session_key,
+                    extra_headers=extra_headers,
+                    include_json_content_type=False,
+                ),
+            )
+            response.raise_for_status()
+            return response.content, dict(response.headers)
+    except httpx.HTTPError as exc:
+        _persist_hermes_exception(
+            method=method,
+            endpoint=url,
+            params=params,
+            json_payload=None,
+            data_payload=None,
+            file_fields=None,
             profile=profile,
             session_id=session_id,
             session_key=session_key,
@@ -171,6 +227,8 @@ async def _stream_sse(
             endpoint=url,
             params=params,
             json_payload=json,
+            data_payload=None,
+            file_fields=None,
             profile=profile,
             session_id=session_id,
             session_key=session_key,
@@ -183,11 +241,23 @@ async def _stream_sse(
 async def chat_completions(
     payload: dict[str, Any],
     *,
+    files: dict[str, FileUpload] | None = None,
     session_id: str | None = None,
     session_key: str | None = None,
     profile: str | None = None,
     timeout: float | None = REQUEST_TIMEOUT,
 ) -> dict[str, Any]:
+    if files is not None:
+        return await _request(
+            "POST",
+            "/v1/chat/completions",
+            data={"payload": json_lib.dumps(payload, ensure_ascii=False)},
+            files=files,
+            session_id=session_id,
+            session_key=session_key,
+            profile=profile,
+            timeout=timeout,
+        )
     return await _request(
         "POST",
         "/v1/chat/completions",
@@ -202,10 +272,21 @@ async def chat_completions(
 async def responses_create(
     payload: dict[str, Any],
     *,
+    files: dict[str, FileUpload] | None = None,
     session_id: str | None = None,
     session_key: str | None = None,
     profile: str | None = None,
 ) -> dict[str, Any]:
+    if files is not None:
+        return await _request(
+            "POST",
+            "/v1/responses",
+            data={"payload": json_lib.dumps(payload, ensure_ascii=False)},
+            files=files,
+            session_id=session_id,
+            session_key=session_key,
+            profile=profile,
+        )
     return await _request(
         "POST",
         "/v1/responses",
@@ -469,4 +550,38 @@ async def create_new_hermes_session(
 ) -> dict[str, Any]:
     """Create a new Hermes session with POST /api/sessions."""
     return await sessions_create(payload or {}, profile=profile)
+
+
+async def files_upload(
+    file: FileUpload,
+    *,
+    purpose: str | None = None,
+    profile: str | None = None,
+) -> dict[str, Any]:
+    data = {"purpose": purpose} if purpose else None
+    return await _request(
+        "POST",
+        "/v1/files",
+        data=data,
+        files={"file": file},
+        profile=profile,
+    )
+
+
+async def files_get(file_id: str, *, profile: str | None = None) -> dict[str, Any]:
+    return await _request("GET", f"/v1/files/{file_id}", profile=profile)
+
+
+async def files_download(
+    file_id: str,
+    *,
+    profile: str | None = None,
+    timeout: float | None = REQUEST_TIMEOUT,
+) -> tuple[bytes, dict[str, str]]:
+    return await _request_bytes(
+        "GET",
+        f"/v1/files/{file_id}/content",
+        profile=profile,
+        timeout=timeout,
+    )
 
