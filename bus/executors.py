@@ -8,6 +8,7 @@ from bus.queues import SpaceEventQueueItem, space_events_queue
 from db.database import SessionLocal
 from db.models import SpaceEvent
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ async def _send_to_hermes(
 async def _run_space_event_and_update(
     item: SpaceEventQueueItem,
     space_event: SpaceEvent,
+    db: Session,
 ) -> dict[str, Any]:
     """Build a chat payload from the Space event, run it, and update the DB row."""
     message_content = build_space_event_message(
@@ -52,15 +54,12 @@ async def _run_space_event_and_update(
     space_event.sent_date = func.now()
     space_event.result = json.dumps(response)
 
-    db = SessionLocal()
     try:
-        db.add(space_event)
+        # space_event is already attached to this session in run_space_event.
         db.commit()
     except Exception:
         logger.exception("Failed to update space_event id=%s after Hermes call", space_event.id)
         db.rollback()
-    finally:
-        db.close()
 
     return response
 
@@ -77,7 +76,7 @@ async def run_space_event(input_data: SpaceEventQueueItem) -> dict[str, Any] | N
             logger.error("SpaceEvent not found for space_event_id=%s", input_data.space_event_id)
             return None
 
-        return await _run_space_event_and_update(input_data, space_event)
+        return await _run_space_event_and_update(input_data, space_event, db)
     finally:
         db.close()
 
