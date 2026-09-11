@@ -36,6 +36,67 @@ class TestMCP(unittest.TestCase):
         res_unknown = asyncio.run(call_tool("unknown_tool", {}))
         self.assertTrue(res_unknown["isError"])
 
+    def test_call_tool_logs_success_with_sanitized_params(self):
+        with patch("mcp.core.persist_mcp_call_log") as log_mock:
+            res = asyncio.run(
+                call_tool(
+                    "hello",
+                    {
+                        "name": "Alice",
+                        "token": "secret-token",
+                        "nested": {"authorization": "Bearer abc"},
+                    },
+                    request_id=321,
+                )
+            )
+
+        self.assertFalse(res["isError"])
+        log_mock.assert_called_once()
+        call_kwargs = log_mock.call_args.kwargs
+        self.assertEqual(call_kwargs["jsonrpc_id"], "321")
+        self.assertEqual(call_kwargs["tool_call_name"], "hello")
+        self.assertFalse(call_kwargs["is_error"])
+        self.assertEqual(call_kwargs["error_message"], None)
+        self.assertEqual(call_kwargs["params_sanitized"]["token"], "***")
+        self.assertEqual(call_kwargs["params_sanitized"]["nested"]["authorization"], "***")
+        self.assertIn("Hello, Alice!", call_kwargs["result_preview"])
+        self.assertGreaterEqual(call_kwargs["result_size"], len("Hello, Alice!"))
+
+    def test_call_tool_logs_unknown_tool(self):
+        with patch("mcp.core.persist_mcp_call_log") as log_mock:
+            res = asyncio.run(call_tool("unknown_tool_name", {"password": "123"}, request_id="req-77"))
+
+        self.assertTrue(res["isError"])
+        log_mock.assert_called_once()
+        call_kwargs = log_mock.call_args.kwargs
+        self.assertEqual(call_kwargs["jsonrpc_id"], "req-77")
+        self.assertEqual(call_kwargs["tool_call_name"], "unknown_tool_name")
+        self.assertTrue(call_kwargs["is_error"])
+        self.assertIn("not found", call_kwargs["error_message"])
+        self.assertEqual(call_kwargs["params_sanitized"]["password"], "***")
+
+    def test_call_tool_logs_exception_and_keeps_exception_persistence(self):
+        def _raise_tool(**_kwargs):
+            raise ValueError("boom")
+
+        with (
+            patch.dict("mcp.core.TOOL_HANDLERS", {"raise_tool": _raise_tool}, clear=False),
+            patch("mcp.core.persist_mcp_call_log") as log_mock,
+            patch("mcp.core._persist_tool_exception") as exception_mock,
+        ):
+            res = asyncio.run(call_tool("raise_tool", {"secret": "value"}, request_id=999))
+
+        self.assertTrue(res["isError"])
+        exception_mock.assert_called_once()
+        log_mock.assert_called_once()
+        call_kwargs = log_mock.call_args.kwargs
+        self.assertEqual(call_kwargs["jsonrpc_id"], "999")
+        self.assertEqual(call_kwargs["tool_call_name"], "raise_tool")
+        self.assertTrue(call_kwargs["is_error"])
+        self.assertEqual(call_kwargs["error_message"], "boom")
+        self.assertEqual(call_kwargs["params_sanitized"]["secret"], "***")
+        self.assertIn("Error executing tool 'raise_tool'", call_kwargs["result_preview"])
+
     def test_mcp_initialize(self):
         response = self.client.post(
             "/mcp",

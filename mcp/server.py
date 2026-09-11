@@ -82,7 +82,7 @@ async def handle_mcp_request(payload: dict[str, Any]) -> dict[str, Any] | None:
         if arguments is not None and not isinstance(arguments, dict):
             return _jsonrpc_error(-32602, "Invalid params: 'arguments' must be an object", req_id)
 
-        tool_result = await call_tool(tool_name, arguments)
+        tool_result = await call_tool(tool_name, arguments, request_id=req_id)
         return _jsonrpc_result(tool_result, req_id)
 
     else:
