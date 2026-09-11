@@ -5,10 +5,12 @@ import logging
 import mimetypes
 import os
 import re
+import traceback
 from pathlib import Path
 from typing import Any
 
 import httpx
+from db.exception_store import persist_api_exception
 from fastapi import Request
 from helpers.environment import (
 	MAX_REPLY_FILE_UPLOAD_BYTES,
@@ -323,15 +325,45 @@ async def _post_file_to_campfire(upload_url: str, file_path: Path) -> bool:
 		logger.info("Posted file to Campfire successfully: %s", file_path)
 		return True
 	except httpx.HTTPStatusError as exc:
+		persist_api_exception(
+			service_name="bonfire_upload",
+			method="POST",
+			endpoint=upload_url,
+			status_code=exc.response.status_code,
+			error_type=type(exc).__name__,
+			error_message=str(exc),
+			stored_exception=traceback.format_exc(),
+			request_context={"file_name": file_path.name, "content_type": content_type},
+		)
 		logger.warning(
 			"Campfire rejected attachment upload for %s: %s %s",
 			file_path,
 			exc.response.status_code,
 			exc.response.text,
 		)
-	except OSError:
+	except OSError as exc:
+		persist_api_exception(
+			service_name="bonfire_upload",
+			method="POST",
+			endpoint=upload_url,
+			status_code=None,
+			error_type=type(exc).__name__,
+			error_message=str(exc),
+			stored_exception=traceback.format_exc(),
+			request_context={"file_name": file_path.name, "content_type": content_type},
+		)
 		logger.warning("Failed to open mentioned file for upload: %s", file_path)
 	except httpx.RequestError as exc:
+		persist_api_exception(
+			service_name="bonfire_upload",
+			method="POST",
+			endpoint=upload_url,
+			status_code=None,
+			error_type=type(exc).__name__,
+			error_message=str(exc),
+			stored_exception=traceback.format_exc(),
+			request_context={"file_name": file_path.name, "content_type": content_type},
+		)
 		logger.warning("Request error while uploading mentioned file %s: %s", file_path, str(exc))
 
 	return False

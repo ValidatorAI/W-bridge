@@ -41,3 +41,18 @@ class McpException(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class ApiException(Base):
+    __tablename__ = "api_exceptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
+    service_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    method: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    endpoint: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    error_type: Mapped[str] = mapped_column(String(255), nullable=False)
+    error_message: Mapped[str] = mapped_column(Text, nullable=False)
+    stored_exception: Mapped[str] = mapped_column(Text, nullable=False)
+    request_context: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+

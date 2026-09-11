@@ -1,7 +1,9 @@
 import logging
+import traceback
 from typing import Any, BinaryIO
 
 import httpx
+from db.exception_store import persist_api_exception
 
 from helpers.environment import (
     OUTPUT_BASE_URL,
@@ -39,6 +41,40 @@ def prune(values: dict[str, Any] | None) -> dict[str, Any] | None:
     return pruned or None
 
 
+def _status_code_from_http_error(exc: httpx.HTTPError) -> int | None:
+    response = getattr(exc, "response", None)
+    if response is None:
+        return None
+    return response.status_code
+
+
+def _persist_space_api_exception(
+    *,
+    method: str,
+    endpoint: str,
+    params: dict[str, Any] | None,
+    json_payload: dict[str, Any] | None,
+    data_payload: dict[str, Any] | None,
+    file_fields: list[str] | None,
+    exc: httpx.HTTPError,
+) -> None:
+    persist_api_exception(
+        service_name="space_api",
+        method=method,
+        endpoint=endpoint,
+        status_code=_status_code_from_http_error(exc),
+        error_type=type(exc).__name__,
+        error_message=str(exc),
+        stored_exception=traceback.format_exc(),
+        request_context={
+            "params": params,
+            "json": json_payload,
+            "data": data_payload,
+            "file_fields": file_fields,
+        },
+    )
+
+
 async def request(
     method: str,
     path: str,
@@ -48,19 +84,32 @@ async def request(
     data: dict[str, Any] | None = None,
     files: dict[str, FileUpload] | None = None,
 ) -> Any:
-    response = await _get_client().request(
-        method,
-        f"/api{path}",
-        json=json,
-        params=params,
-        data=data,
-        files=files,
-        headers=_auth_headers(),
-    )
-    response.raise_for_status()
-    if response.status_code == 204 or not response.content:
-        return None
-    return response.json()
+    endpoint = f"/api{path}"
+    try:
+        response = await _get_client().request(
+            method,
+            endpoint,
+            json=json,
+            params=params,
+            data=data,
+            files=files,
+            headers=_auth_headers(),
+        )
+        response.raise_for_status()
+        if response.status_code == 204 or not response.content:
+            return None
+        return response.json()
+    except httpx.HTTPError as exc:
+        _persist_space_api_exception(
+            method=method,
+            endpoint=endpoint,
+            params=params,
+            json_payload=json,
+            data_payload=data,
+            file_fields=sorted(files.keys()) if files else None,
+            exc=exc,
+        )
+        raise
 
 
 async def request_bytes(
@@ -69,14 +118,27 @@ async def request_bytes(
     *,
     params: dict[str, Any] | None = None,
 ) -> bytes:
-    response = await _get_client().request(
-        method,
-        f"/api{path}",
-        params=params,
-        headers=_auth_headers(),
-    )
-    response.raise_for_status()
-    return response.content
+    endpoint = f"/api{path}"
+    try:
+        response = await _get_client().request(
+            method,
+            endpoint,
+            params=params,
+            headers=_auth_headers(),
+        )
+        response.raise_for_status()
+        return response.content
+    except httpx.HTTPError as exc:
+        _persist_space_api_exception(
+            method=method,
+            endpoint=endpoint,
+            params=params,
+            json_payload=None,
+            data_payload=None,
+            file_fields=None,
+            exc=exc,
+        )
+        raise
 
 
 async def aclose_client() -> None:

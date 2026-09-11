@@ -1,7 +1,7 @@
 from sqlalchemy import inspect
 
 from db.database import Base
-from db.models import Bot, McpException, SpaceEvent
+from db.models import ApiException, Bot, McpException, SpaceEvent
 
 
 def test_bot_model_has_no_token_column():
@@ -33,6 +33,22 @@ def test_mcp_exception_model_exposes_expected_columns_and_table_name():
     assert "tool_call_name" in mapper.columns
     assert "exception" in mapper.columns
     assert "stored_exception" in mapper.columns
+    assert "created_at" in mapper.columns
+
+
+def test_api_exception_model_exposes_expected_columns_and_table_name():
+    mapper = inspect(ApiException)
+
+    assert mapper.primary_key[0].name == "id"
+    assert mapper.mapped_table.name == "api_exceptions"
+    assert "service_name" in mapper.columns
+    assert "method" in mapper.columns
+    assert "endpoint" in mapper.columns
+    assert "status_code" in mapper.columns
+    assert "error_type" in mapper.columns
+    assert "error_message" in mapper.columns
+    assert "stored_exception" in mapper.columns
+    assert "request_context" in mapper.columns
     assert "created_at" in mapper.columns
 
 

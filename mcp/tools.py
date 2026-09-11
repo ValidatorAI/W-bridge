@@ -4,9 +4,11 @@ import asyncio
 import json
 import mimetypes
 import os
+import traceback
 from typing import Any, Callable
 
 import httpx
+from db.exception_store import persist_api_exception
 
 from mcp.helpers import (
     bot_name_fuzzy_match,
@@ -228,9 +230,22 @@ async def _resolve_attachment(
         content = await asyncio.to_thread(_read)
         return (filename, content, content_type)
     if attachment_url:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(attachment_url)
-            response.raise_for_status()
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(attachment_url)
+                response.raise_for_status()
+        except httpx.HTTPError as exc:
+            persist_api_exception(
+                service_name="attachment_fetch",
+                method="GET",
+                endpoint=attachment_url,
+                status_code=getattr(getattr(exc, "response", None), "status_code", None),
+                error_type=type(exc).__name__,
+                error_message=str(exc),
+                stored_exception=traceback.format_exc(),
+                request_context=None,
+            )
+            raise
         filename = attachment_url.split("/")[-1] or "attachment"
         content_type = response.headers.get("content-type") or "application/octet-stream"
         return (filename, response.content, content_type)

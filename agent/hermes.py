@@ -1,8 +1,10 @@
 from collections.abc import AsyncIterator
 import os
+import traceback
 from typing import Any
 
 import httpx
+from db.exception_store import persist_api_exception
 from helpers.environment import API_SERVER_KEY, BASE_URI, HERMES_HTTP_TIMEOUT
 
 
@@ -51,6 +53,42 @@ def _clean_query(params: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in params.items() if v is not None}
 
 
+def _status_code_from_http_error(exc: httpx.HTTPError) -> int | None:
+    response = getattr(exc, "response", None)
+    if response is None:
+        return None
+    return response.status_code
+
+
+def _persist_hermes_exception(
+    *,
+    method: str,
+    endpoint: str,
+    params: dict[str, Any] | None,
+    json_payload: dict[str, Any] | None,
+    profile: str | None,
+    session_id: str | None,
+    session_key: str | None,
+    exc: httpx.HTTPError,
+) -> None:
+    persist_api_exception(
+        service_name="hermes_api",
+        method=method,
+        endpoint=endpoint,
+        status_code=_status_code_from_http_error(exc),
+        error_type=type(exc).__name__,
+        error_message=str(exc),
+        stored_exception=traceback.format_exc(),
+        request_context={
+            "params": params,
+            "json": json_payload,
+            "profile": profile,
+            "session_id": session_id,
+            "has_session_key": bool(session_key),
+        },
+    )
+
+
 async def _request(
     method: str,
     path: str,
@@ -63,22 +101,35 @@ async def _request(
     extra_headers: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     url = _build_url(path, profile)
-    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as http_client:
-        response = await http_client.request(
-            method,
-            url,
-            json=json,
+    try:
+        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as http_client:
+            response = await http_client.request(
+                method,
+                url,
+                json=json,
+                params=params,
+                headers=_auth_headers(
+                    session_id=session_id,
+                    session_key=session_key,
+                    extra_headers=extra_headers,
+                ),
+            )
+            response.raise_for_status()
+            if not response.content:
+                return {"status": "ok"}
+            return response.json()
+    except httpx.HTTPError as exc:
+        _persist_hermes_exception(
+            method=method,
+            endpoint=url,
             params=params,
-            headers=_auth_headers(
-                session_id=session_id,
-                session_key=session_key,
-                extra_headers=extra_headers,
-            ),
+            json_payload=json,
+            profile=profile,
+            session_id=session_id,
+            session_key=session_key,
+            exc=exc,
         )
-        response.raise_for_status()
-        if not response.content:
-            return {"status": "ok"}
-        return response.json()
+        raise
 
 
 async def _stream_sse(
@@ -100,18 +151,31 @@ async def _stream_sse(
     )
     headers["Accept"] = "text/event-stream"
 
-    async with httpx.AsyncClient(timeout=None) as http_client:
-        async with http_client.stream(
-            method,
-            url,
-            json=json,
+    try:
+        async with httpx.AsyncClient(timeout=None) as http_client:
+            async with http_client.stream(
+                method,
+                url,
+                json=json,
+                params=params,
+                headers=headers,
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if line:
+                        yield line
+    except httpx.HTTPError as exc:
+        _persist_hermes_exception(
+            method=method,
+            endpoint=url,
             params=params,
-            headers=headers,
-        ) as response:
-            response.raise_for_status()
-            async for line in response.aiter_lines():
-                if line:
-                    yield line
+            json_payload=json,
+            profile=profile,
+            session_id=session_id,
+            session_key=session_key,
+            exc=exc,
+        )
+        raise
 
 
 # ----------------------------- Core OpenAI-compatible APIs -----------------------------
@@ -367,13 +431,27 @@ async def model_options_get(*, refresh: bool = False, profile: str | None = None
 
 async def api_status_summary_get(*, profile: str | None = None) -> dict[str, Any]:
     del profile
-    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as http_client:
-        response = await http_client.get(
-            f"{STATUS_BASE_URI}/api/status",
-            headers={"Authorization": f"Bearer {API_SERVER_KEY}"},
+    status_url = f"{STATUS_BASE_URI}/api/status"
+    try:
+        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as http_client:
+            response = await http_client.get(
+                status_url,
+                headers={"Authorization": f"Bearer {API_SERVER_KEY}"},
+            )
+            response.raise_for_status()
+            status_payload = response.json()
+    except httpx.HTTPError as exc:
+        persist_api_exception(
+            service_name="hermes_api",
+            method="GET",
+            endpoint=status_url,
+            status_code=_status_code_from_http_error(exc),
+            error_type=type(exc).__name__,
+            error_message=str(exc),
+            stored_exception=traceback.format_exc(),
+            request_context={"status_endpoint": True},
         )
-        response.raise_for_status()
-        status_payload = response.json()
+        raise
     return {
         "gateway_busy": status_payload.get("gateway_busy"),
         "active_agents": status_payload.get("active_agents"),
