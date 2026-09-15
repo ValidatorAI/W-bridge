@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
 
@@ -17,6 +18,9 @@ from db.models import SpaceEvent
 from helpers.helpers import str_to_bool
 from mcp.server import handle_mcp_request
 from schemas.pydantic import SpaceEventInput
+
+
+load_dotenv()
 
 
 @asynccontextmanager
