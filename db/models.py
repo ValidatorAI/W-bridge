@@ -29,6 +29,30 @@ class SpaceEvent(Base):
     stored_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     sent_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     result: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Routing unit this event belongs to (see bus/dedupe.py). NULL = never deduplicated.
+    dedupe_key: Mapped[str | None] = mapped_column(String(512), nullable=True, index=True)
+
+
+class SpaceEventDispatchGroup(Base):
+    """One row per deduplicated routing unit (see bus/dedupe.py).
+
+    The UNIQUE constraint on ``dedupe_key`` is the atomic claim: the first event of a
+    Rails event group inserts the row and owns the single dispatch, every later member
+    of the same group fails the insert and is recorded as a duplicate instead of being
+    routed again.
+    """
+
+    __tablename__ = "space_event_dispatch_groups"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
+    dedupe_key: Mapped[str] = mapped_column(String(512), nullable=False, unique=True, index=True)
+    lead_space_event_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    lead_space_event_row_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending", server_default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    result: Mapped[str | None] = mapped_column(Text, nullable=True)
+
 
 
 class McpException(Base):

@@ -2,9 +2,10 @@ import asyncio
 import logging
 
 from agent.hermes import api_status_summary_get
+from bus.dedupe import pending_dispatch_items
 from bus.executors import run_space_event
 from bus.queues import space_events_queue
-from helpers.environment import HERMES_MAX_ACTIVE_AGENTS
+from helpers.environment import HERMES_MAX_ACTIVE_AGENTS, SPACE_EVENT_RECOVERY_MAX_AGE_SECONDS
 
 
 logger = logging.getLogger(__name__)
@@ -99,6 +100,37 @@ async def _cron_runner() -> None:
         logger.info("Bus cron runner stopped")
 
 
+async def _requeue_lost_work() -> None:
+    """Re-queue work the in-memory queue would otherwise lose across a restart.
+
+    The queue lives in memory while the events live in the DB, so a restart used to drop
+    whatever was still waiting. Recovering the claimed groups (only its claim owner is
+    queued, so a group can never be stranded by its own claim) and the un-dispatched
+    events of the recent past keeps a restart from silently swallowing them.
+    """
+    if SPACE_EVENT_RECOVERY_MAX_AGE_SECONDS <= 0:
+        logger.info("Space event recovery disabled (SPACE_EVENT_RECOVERY_MAX_AGE_SECONDS=0)")
+        return
+
+    try:
+        items = await asyncio.to_thread(
+            pending_dispatch_items,
+            max_age_seconds=SPACE_EVENT_RECOVERY_MAX_AGE_SECONDS,
+        )
+    except Exception:
+        logger.exception("Space event recovery scan failed")
+        return
+
+    for item in items:
+        await space_events_queue.put(item)
+        logger.warning(
+            "Recovered un-dispatched space event: space_event_id=%s event_type=%s dedupe_key=%s",
+            item.space_event_id,
+            item.event_type,
+            item.dedupe_key,
+        )
+
+
 def start_cron() -> None:
     global _cron_task, _stop_event
     if _cron_task is not None and not _cron_task.done():
@@ -106,6 +138,7 @@ def start_cron() -> None:
 
     _stop_event = asyncio.Event()
     _cron_task = asyncio.create_task(_cron_runner(), name="bus-cron-runner")
+    asyncio.create_task(_requeue_lost_work(), name="bus-cron-recovery")
 
 
 async def stop_cron() -> None:

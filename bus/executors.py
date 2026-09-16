@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import mimetypes
 from urllib.parse import urlparse
@@ -7,6 +6,7 @@ from typing import Any
 
 from agent.hermes import chat_completions
 from agent.hermes_logic import build_space_event_message
+from bus import dedupe
 from bus.queues import SpaceEventQueueItem, space_events_queue
 from db.database import SessionLocal
 from db.models import SpaceEvent
@@ -18,10 +18,10 @@ from helpers.environment import (
     HERMES_EVENT_MAX_ATTACHMENT_BYTES,
     SPACE_EVENT_FIRE_AND_FORGET,
     SPACE_EVENT_HERMES_TIMEOUT,
+    SPACE_EVENT_MERGE_SETTLE_SECONDS,
 )
 from space.api.messages import download_attachment_by_id, download_message_attachment
 import httpx
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -223,13 +223,33 @@ async def _run_space_event_and_update(
     space_event: SpaceEvent,
     db: Session,
 ) -> dict[str, Any]:
-    """Build a chat payload from the Space event, run it, and update the DB row."""
-    message_content = build_space_event_message(
-        event_type=item.event_type,
-        event_data=item.event_data,
+    """Build a chat payload from the Space event, run it, and update the DB row.
+
+    All stored members of the event's routing unit (see bus/dedupe.py) are merged into
+    one payload here, so a Rails event group results in exactly one Hermes call - and
+    the members are marked handled together with that single result.
+    """
+    group_rows = dedupe.resolve_group_events(db, dedupe_key=item.dedupe_key, fallback=space_event)
+    event_type, event_data = dedupe.merge_group_events(
+        group_rows,
+        fallback_event_type=item.event_type,
+        fallback_event_data=item.event_data,
     )
 
-    attachments = _extract_event_attachments(item.event_data)
+    if len(group_rows) > 1:
+        logger.info(
+            "[Space Event Dedupe] dispatch key=%s members=%s merged_event_type=%s",
+            item.dedupe_key,
+            [row.id for row in group_rows],
+            event_type,
+        )
+
+    message_content = build_space_event_message(
+        event_type=event_type,
+        event_data=event_data,
+    )
+
+    attachments = _extract_event_attachments(event_data)
     upload_files: dict[str, tuple[str, bytes, str]] | None = None
     unresolved_attachments: list[dict[str, Any]] = attachments
 
@@ -252,56 +272,148 @@ async def _run_space_event_and_update(
 
     response = await _send_to_hermes(payload, profile=item.profile, files=upload_files)
 
-    space_event.sent_date = func.now()
-    space_event.result = json.dumps(response)
-
-    try:
-        # space_event is already attached to this session in run_space_event.
-        db.commit()
-    except Exception:
-        logger.exception("Failed to update space_event id=%s after Hermes call", space_event.id)
-        db.rollback()
+    dedupe.record_group_dispatch(
+        db,
+        dedupe_key=item.dedupe_key,
+        rows=group_rows,
+        lead_row_id=space_event.id,
+        result_payload=response,
+        event_type=event_type,
+    )
 
     return response
 
 
-def _mark_space_event_failure(db: Session, space_event: SpaceEvent, exc: Exception) -> None:
+def _mark_space_event_failure(
+    db: Session,
+    space_event: SpaceEvent,
+    exc: Exception,
+    *,
+    dedupe_key: str | None = None,
+) -> None:
     error_payload = {
         "status": "error",
         "error_type": type(exc).__name__,
         "error_message": str(exc),
     }
-    space_event.result = json.dumps(error_payload)
-    try:
-        db.commit()
-    except Exception:
-        logger.exception("Failed to persist Hermes failure for space_event id=%s", space_event.id)
-        db.rollback()
+    rows = dedupe.resolve_group_events(db, dedupe_key=dedupe_key, fallback=space_event)
+    dedupe.record_group_failure(db, dedupe_key=dedupe_key, rows=rows, error_payload=error_payload)
+
+
+def _load_space_event(db: Session, input_data: SpaceEventQueueItem) -> SpaceEvent | None:
+    """Resolve the stored row of a queued item.
+
+    The internal row id wins: ``space_event_id`` is the Rails event id, which is not
+    unique here (a replayed webhook keeps the id of the original delivery), so resolving
+    by it alone can pick the wrong row of a replayed pair.
+    """
+    if input_data.space_event_row_id is not None:
+        row = db.get(SpaceEvent, input_data.space_event_row_id)
+        if row is not None:
+            return row
+
+    return (
+        db.query(SpaceEvent)
+        .filter(SpaceEvent.space_event_id == input_data.space_event_id)
+        .order_by(SpaceEvent.id)
+        .first()
+    )
+
+
+def _skip_if_unit_already_dispatched(db: Session, item: SpaceEventQueueItem, space_event: SpaceEvent) -> bool:
+    """Exactly-once guard: never route a member of an already dispatched unit.
+
+    Rows stored before the dedupe feature carry no key, so the key is derived from the
+    row when the queue item has none - which is what makes a legacy pair that is still
+    in flight collapse into the dispatch that already happened.
+    """
+    dedupe_key = item.dedupe_key or dedupe.dedupe_key_for_row(space_event)
+    if not dedupe_key:
+        return False
+
+    dispatched_row_id = dedupe.unit_already_dispatched(
+        db,
+        dedupe_key=dedupe_key,
+        exclude_row_id=space_event.id,
+    )
+    if dispatched_row_id is None:
+        return False
+
+    logger.warning(
+        "[Space Event Dedupe] skipping space_event_id=%s: routing unit %s was already dispatched by row=%s",
+        space_event.space_event_id,
+        dedupe_key,
+        dispatched_row_id,
+    )
+    dedupe.mark_already_dispatched(
+        db,
+        space_event,
+        dedupe_key=dedupe_key,
+        dispatched_row_id=dispatched_row_id,
+    )
+    return True
 
 
 async def _run_space_event_detached(input_data: SpaceEventQueueItem) -> None:
     """Detached worker used by fire-and-forget mode."""
     db = SessionLocal()
     try:
-        space_event: SpaceEvent | None = db.query(SpaceEvent).filter(
-            SpaceEvent.space_event_id == input_data.space_event_id
-        ).first()
+        space_event = _load_space_event(db, input_data)
 
         if space_event is None:
             logger.error("SpaceEvent not found for detached space_event_id=%s", input_data.space_event_id)
+            return
+
+        if _skip_if_unit_already_dispatched(db, input_data, space_event):
             return
 
         try:
             await _run_space_event_and_update(input_data, space_event, db)
         except Exception as exc:
             logger.exception("Detached Hermes call failed for space_event id=%s", space_event.id)
-            _mark_space_event_failure(db, space_event, exc)
+            _mark_space_event_failure(db, space_event, exc, dedupe_key=input_data.dedupe_key)
     finally:
         db.close()
 
 
+async def _defer_while_group_settles(input_data: SpaceEventQueueItem) -> bool:
+    """Re-queue a claimed message group until its merge window has closed.
+
+    Members of a Rails event group arrive as independent webhooks, so dispatching the
+    first one immediately can drop what the siblings add (``bot_user_ids`` only travels
+    on ``ai_question_asked``). The item is put back on the queue and retried on a later
+    cron tick; single events are never deferred.
+    """
+    if not dedupe.key_needs_settle(input_data.dedupe_key) or SPACE_EVENT_MERGE_SETTLE_SECONDS <= 0:
+        return False
+
+    db = SessionLocal()
+    try:
+        settling = dedupe.group_is_settling(
+            db,
+            input_data.dedupe_key,
+            settle_seconds=SPACE_EVENT_MERGE_SETTLE_SECONDS,
+        )
+    finally:
+        db.close()
+
+    if not settling:
+        return False
+
+    logger.info(
+        "[Space Event Dedupe] merge window still open for key=%s (space_event_id=%s); will dispatch next tick",
+        input_data.dedupe_key,
+        input_data.space_event_id,
+    )
+    await space_events_queue.put(input_data)
+    return True
+
+
 async def run_space_event(input_data: SpaceEventQueueItem) -> dict[str, Any] | None:
     """Load a Space event from the DB and forward it to Hermes chat completions."""
+    if await _defer_while_group_settles(input_data):
+        return {"status": "deferred_merge_window", "dedupe_key": input_data.dedupe_key}
+
     if SPACE_EVENT_FIRE_AND_FORGET:
         logger.info("Dispatching space_event_id=%s in fire-and-forget mode", input_data.space_event_id)
         task = asyncio.create_task(
@@ -313,19 +425,20 @@ async def run_space_event(input_data: SpaceEventQueueItem) -> dict[str, Any] | N
 
     db = SessionLocal()
     try:
-        space_event: SpaceEvent | None = db.query(SpaceEvent).filter(
-            SpaceEvent.space_event_id == input_data.space_event_id
-        ).first()
+        space_event = _load_space_event(db, input_data)
 
         if space_event is None:
             logger.error("SpaceEvent not found for space_event_id=%s", input_data.space_event_id)
             return None
 
+        if _skip_if_unit_already_dispatched(db, input_data, space_event):
+            return {"status": "skipped_already_dispatched", "dedupe_key": input_data.dedupe_key}
+
         try:
             return await _run_space_event_and_update(input_data, space_event, db)
         except Exception as exc:
             logger.exception("Hermes call failed for space_event id=%s", space_event.id)
-            _mark_space_event_failure(db, space_event, exc)
+            _mark_space_event_failure(db, space_event, exc, dedupe_key=input_data.dedupe_key)
             return None
     finally:
         db.close()

@@ -11,6 +11,7 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
 
 from bus.cron import start_cron, stop_cron
+from bus.dedupe import build_dedupe_key, claim_dispatch_group
 from bus.executors import submit_space_event
 from bus.queues import SpaceEventQueueItem
 from db.database import SessionLocal
@@ -62,21 +63,56 @@ async def space_events(
 	logger.info("[Space Event Received]: %s", event.model_dump())
 
 	space_event_id = str(event.id) if event.id is not None else None
-	_db_persist_space_event(event)
+
+	# Dedupe key of the routing unit this event belongs to (see bus/dedupe.py). Rails
+	# emits message_created + ai_question_asked for one user message and delivers them
+	# as independent webhooks, so the key - not the webhook - decides what gets routed.
+	dedupe_key = build_dedupe_key(
+		event_type=event.event_type,
+		group_id=event.group_id,
+		event_data=event.event_data,
+		event_id=event.event_id,
+		space_event_id=space_event_id,
+	)
+
+	row_id = _db_persist_space_event(event, dedupe_key=dedupe_key)
+
+	decision = claim_dispatch_group(
+		dedupe_key=dedupe_key,
+		row_id=row_id,
+		space_event_id=space_event_id,
+	)
+
+	if decision.is_duplicate:
+		# A member of an already claimed group: recorded on its own row and logged as a
+		# duplicate, never queued, so it cannot produce a second dispatch/reply.
+		logger.info(
+			"[Space Event Dedupe] space_event_id=%s is a duplicate member of key=%s (owner=%s); not queued",
+			space_event_id,
+			decision.dedupe_key,
+			decision.duplicate_of_space_event_id,
+		)
+		return PlainTextResponse("", status_code=200)
 
 	await submit_space_event(
 		SpaceEventQueueItem(
 			space_event_id=space_event_id,
 			event_type=event.event_type,
 			event_data=event.event_data,
+			dedupe_key=decision.dedupe_key,
+			space_event_row_id=row_id,
 		)
 	)
 
 	return PlainTextResponse("", status_code=200)
 
 
-def _db_persist_space_event(event: SpaceEventInput) -> None:
-	"""Persist the incoming Space event; errors are logged, not raised."""
+def _db_persist_space_event(event: SpaceEventInput, *, dedupe_key: str | None = None) -> int | None:
+	"""Persist the incoming Space event; errors are logged, not raised.
+
+	Returns the internal row id (used as the dedupe claim reference) or None when the
+	row could not be stored.
+	"""
 	db = SessionLocal()
 	try:
 		db_event = SpaceEvent(
@@ -86,12 +122,16 @@ def _db_persist_space_event(event: SpaceEventInput) -> None:
 			group_id=event.group_id,
 			event_data=event.event_data,
 			created_at=event.created_at,
+			dedupe_key=dedupe_key,
 		)
 		db.add(db_event)
 		db.commit()
+		db.refresh(db_event)
+		return db_event.id
 	except Exception:
 		logger.exception("Failed to persist Space event id=%s", event.id)
 		db.rollback()
+		return None
 	finally:
 		db.close()
 

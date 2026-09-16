@@ -54,6 +54,21 @@ SPACE_EVENT_HERMES_TIMEOUT = _parse_optional_timeout(
 )
 SPACE_EVENT_FIRE_AND_FORGET = _env_bool("SPACE_EVENT_FIRE_AND_FORGET", "true")
 
+# Members of one Rails event group are delivered by independent jobs, so the first
+# member waits this long for its siblings before the single merged dispatch is sent
+# (see bus/dedupe.py). 0 disables the wait (dispatch the first member immediately).
+SPACE_EVENT_MERGE_SETTLE_SECONDS = float(os.environ.get("SPACE_EVENT_MERGE_SETTLE_SECONDS", "3"))
+# On startup, re-queue deduplicated groups / un-dispatched events from the recent past
+# that the in-memory queue would otherwise have lost across a restart. 0 disables it.
+SPACE_EVENT_RECOVERY_MAX_AGE_SECONDS = float(os.environ.get("SPACE_EVENT_RECOVERY_MAX_AGE_SECONDS", "900"))
+# Window in which a member stored before the dedupe feature counts as "already
+# dispatched" when its twin arrives (see bus/dedupe.py). Match the recovery window: both
+# describe how far back a lost queue may still be replayed.
+SPACE_EVENT_LEGACY_DISPATCH_LOOKBACK_SECONDS = float(
+    os.environ.get("SPACE_EVENT_LEGACY_DISPATCH_LOOKBACK_SECONDS", "900")
+)
+
+
 def _default_sqlite_path() -> str:
     # In Docker use a volume-friendly location; local runs stay in the project directory.
     if os.path.exists("/.dockerenv"):
