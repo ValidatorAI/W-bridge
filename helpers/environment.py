@@ -11,6 +11,21 @@ MASTER_KEY_TOKEN = os.environ.get("MASTER_KEY_TOKEN", "")
 MODEL = os.environ.get("MODEL", "deepseek-v4-flash")
 HERMES_HTTP_TIMEOUT = float(os.environ.get("HERMES_HTTP_TIMEOUT", "60"))
 
+
+def _parse_optional_timeout(raw_value: str, fallback: float) -> float | None:
+    """Parse timeout from env; supports numeric values and 'none' for no timeout."""
+    cleaned = (raw_value or "").strip().lower()
+    if cleaned in {"none", "null", "off", "false", "infinite", "infinity", ""}:
+        return None
+    try:
+        return float(cleaned)
+    except ValueError:
+        return fallback
+
+
+def _env_bool(name: str, default: str = "False") -> bool:
+    return os.environ.get(name, default).strip().lower() in {"true", "1", "yes", "on"}
+
 ROOM_BASE_URL = os.environ.get("ROOM_BASE_URL", "https://chat.nvgtrs.io").rstrip("/")
 PORT = os.environ.get("PORT", "80")
 RELOAD = os.environ.get("RELOAD", "False")
@@ -23,6 +38,35 @@ MAX_UPLOAD_BYTES = int(os.environ.get("MAX_UPLOAD_BYTES", str(5 * 1024 * 1024)))
 MAX_TEXT_ATTACHMENT_CHARS = int(os.environ.get("MAX_TEXT_ATTACHMENT_CHARS", "12000"))
 MAX_REPLY_FILE_UPLOADS = int(os.environ.get("MAX_REPLY_FILE_UPLOADS", "5"))
 MAX_REPLY_FILE_UPLOAD_BYTES = int(os.environ.get("MAX_REPLY_FILE_UPLOAD_BYTES", str(20 * 1024 * 1024)))
+HERMES_EVENT_MAX_ATTACHMENTS = int(os.environ.get("HERMES_EVENT_MAX_ATTACHMENTS", "5"))
+HERMES_EVENT_MAX_ATTACHMENT_BYTES = int(
+    os.environ.get("HERMES_EVENT_MAX_ATTACHMENT_BYTES", str(20 * 1024 * 1024))
+)
+HERMES_EVENT_ATTACHMENT_PREFETCH = _env_bool("HERMES_EVENT_ATTACHMENT_PREFETCH", "false")
+HERMES_EVENT_FILE_UPLOAD_ENABLED = _env_bool("HERMES_EVENT_FILE_UPLOAD_ENABLED", "false")
+HERMES_EVENT_FILE_URL_FALLBACK = _env_bool("HERMES_EVENT_FILE_URL_FALLBACK", "true")
+
+BASE_HERMES_PROFILE = os.environ.get("BASE_HERMES_PROFILE", "delegator")
+HERMES_MAX_ACTIVE_AGENTS = int(os.environ.get("HERMES_MAX_ACTIVE_AGENTS", "2"))
+SPACE_EVENT_HERMES_TIMEOUT = _parse_optional_timeout(
+    os.environ.get("SPACE_EVENT_HERMES_TIMEOUT", "none"),
+    HERMES_HTTP_TIMEOUT,
+)
+SPACE_EVENT_FIRE_AND_FORGET = _env_bool("SPACE_EVENT_FIRE_AND_FORGET", "true")
+
+# Members of one Rails event group are delivered by independent jobs, so the first
+# member waits this long for its siblings before the single merged dispatch is sent
+# (see bus/dedupe.py). 0 disables the wait (dispatch the first member immediately).
+SPACE_EVENT_MERGE_SETTLE_SECONDS = float(os.environ.get("SPACE_EVENT_MERGE_SETTLE_SECONDS", "3"))
+# On startup, re-queue deduplicated groups / un-dispatched events from the recent past
+# that the in-memory queue would otherwise have lost across a restart. 0 disables it.
+SPACE_EVENT_RECOVERY_MAX_AGE_SECONDS = float(os.environ.get("SPACE_EVENT_RECOVERY_MAX_AGE_SECONDS", "900"))
+# Window in which a member stored before the dedupe feature counts as "already
+# dispatched" when its twin arrives (see bus/dedupe.py). Match the recovery window: both
+# describe how far back a lost queue may still be replayed.
+SPACE_EVENT_LEGACY_DISPATCH_LOOKBACK_SECONDS = float(
+    os.environ.get("SPACE_EVENT_LEGACY_DISPATCH_LOOKBACK_SECONDS", "900")
+)
 
 
 def _default_sqlite_path() -> str:

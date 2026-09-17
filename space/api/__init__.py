@@ -35,6 +35,13 @@ from .company_status_periods import (
     list_company_status_periods,
     update_company_status_period,
 )
+from .approval_requests import (
+    create_approval_request,
+    delete_approval_request,
+    get_approval_request,
+    list_approval_requests,
+    update_approval_request,
+)
 from .decisions import create_decision
 from .directory_items import (
     create_directory_item,
@@ -100,6 +107,27 @@ from .project_all_hands import (
     update_all_hands_decision,
     update_all_hands_takeaway,
 )
+from .project_bottlenecks import (
+    create_project_bottleneck,
+    delete_project_bottleneck,
+    get_project_bottleneck,
+    list_project_bottlenecks,
+    update_project_bottleneck,
+)
+from .project_milestones import (
+    create_project_milestone,
+    delete_project_milestone,
+    get_project_milestone,
+    list_project_milestones,
+    update_project_milestone,
+)
+from .project_todos import (
+    create_project_todo,
+    delete_project_todo,
+    get_project_todo,
+    list_project_todos,
+    update_project_todo,
+)
 from .project_users import get_project_user, list_project_users
 from .projects import get_project, list_projects
 from .rooms import get_room, list_room_threads, list_rooms, search_rooms
@@ -111,6 +139,7 @@ __all__ = [
     "create_all_hands_action_item",
     "create_all_hands_decision",
     "create_all_hands_takeaway",
+    "create_approval_request",
     "create_attention_item",
     "create_company_status_item",
     "create_company_status_period",
@@ -121,10 +150,14 @@ __all__ = [
     "create_knowledge_item",
     "create_message",
     "create_obsidian_note",
+    "create_project_bottleneck",
+    "create_project_milestone",
+    "create_project_todo",
     "delete_adr",
     "delete_all_hands_action_item",
     "delete_all_hands_decision",
     "delete_all_hands_takeaway",
+    "delete_approval_request",
     "delete_attention_item",
     "delete_company_status_item",
     "delete_company_status_period",
@@ -135,6 +168,9 @@ __all__ = [
     "delete_message",
     "delete_message_by_id",
     "delete_obsidian_note",
+    "delete_project_bottleneck",
+    "delete_project_milestone",
+    "delete_project_todo",
     "download_attachment_by_id",
     "download_message_attachment",
     "filter_company_status_items",
@@ -142,6 +178,7 @@ __all__ = [
     "get_all_hands_action_item",
     "get_all_hands_decision",
     "get_all_hands_takeaway",
+    "get_approval_request",
     "get_attention_item",
     "get_company_status_item",
     "get_company_status_period",
@@ -156,12 +193,16 @@ __all__ = [
     "get_message_by_id",
     "get_obsidian_note",
     "get_project",
+    "get_project_bottleneck",
+    "get_project_milestone",
+    "get_project_todo",
     "get_project_user",
     "get_room",
     "list_adrs",
     "list_all_hands_action_items",
     "list_all_hands_decisions",
     "list_all_hands_takeaways",
+    "list_approval_requests",
     "list_attention_items",
     "list_company_status_items",
     "list_company_status_items_by_period",
@@ -172,6 +213,9 @@ __all__ = [
     "list_knowledge_items",
     "list_messages",
     "list_obsidian_notes",
+    "list_project_bottlenecks",
+    "list_project_milestones",
+    "list_project_todos",
     "list_project_users",
     "list_projects",
     "list_room_threads",
@@ -182,6 +226,7 @@ __all__ = [
     "update_all_hands_action_item",
     "update_all_hands_decision",
     "update_all_hands_takeaway",
+    "update_approval_request",
     "update_attention_item",
     "update_company_status_item",
     "update_company_status_period",
@@ -192,4 +237,7 @@ __all__ = [
     "update_message",
     "update_message_by_id",
     "update_obsidian_note",
+    "update_project_bottleneck",
+    "update_project_milestone",
+    "update_project_todo",
 ]

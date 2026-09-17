@@ -26,22 +26,36 @@ update to connected web clients in that room, in addition to the JSON response.
 |---|---|---|---|
 | GET | `/api/projects` | List all projects | No |
 | GET | `/api/projects/:id` | Get a single project (by id or slug) | No |
-| GET | `/api/projects/:project_id/rooms` | List all rooms of a project | No |
-| GET | `/api/projects/:project_id/rooms/:id` | Get a single room | No |
-| GET | `/api/projects/:project_id/rooms/:id/threads` | Get a room's threads (child rooms) | No |
-| GET | `/api/projects/:project_id/rooms/search?q=` | Fuzzy search rooms by name | No |
-| GET | `/api/projects/:project_id/rooms/:room_id/messages` | List messages of a room (paginated or not, includes `count`) | No |
-| POST | `/api/projects/:project_id/rooms/:room_id/messages` | Post a message and/or file, on behalf of a user | **Yes** — Turbo Stream append + unread broadcast |
-| GET | `/api/projects/:project_id/rooms/:room_id/messages/:id` | Get a single message | No |
-| PATCH/PUT | `/api/projects/:project_id/rooms/:room_id/messages/:id` | Update a message's body and/or attachment | **Yes** — Turbo Stream replace |
-| DELETE | `/api/projects/:project_id/rooms/:room_id/messages/:id` | Delete a message | **Yes** — Turbo Stream remove |
-| GET | `/api/projects/:project_id/rooms/:room_id/messages/:id/attachment` | Download a message's uploaded file | No |
-| GET | `/api/messages/:id` | Get a single message (flat, no project/room needed) | No |
+| GET | `/api/rooms` | List all rooms | No |
+| GET | `/api/rooms/:id` | Get a single room by room id | No |
+| GET | `/api/rooms/:id/threads` | Get a room's threads (child rooms) | No |
+| GET | `/api/rooms/search?q=` | Fuzzy search rooms by name | No |
+| GET | `/api/rooms/:room_id/messages` | List messages for a room (paginated or not, includes `count`) | No |
+| POST | `/api/rooms/:room_id/messages` | Post a message and/or file, on behalf of a user | **Yes** — Turbo Stream append + unread broadcast |
+| GET | `/api/rooms/:room_id/messages/:id` | Get a single message | No |
+| PATCH/PUT | `/api/rooms/:room_id/messages/:id` | Update a message's body and/or attachment | **Yes** — Turbo Stream replace |
+| DELETE | `/api/rooms/:room_id/messages/:id` | Delete a message | **Yes** — Turbo Stream remove |
+| GET | `/api/rooms/:room_id/messages/:id/attachment` | Download a message's uploaded file | No |
+| GET | `/api/projects/:project_id/rooms` | Legacy project-scoped room listing (still supported) | No |
+| GET | `/api/projects/:project_id/rooms/:id` | Legacy project-scoped room lookup | No |
+| GET | `/api/projects/:project_id/rooms/:room_id/messages` | Legacy project-scoped message listing | No |
+| POST | `/api/projects/:project_id/rooms/:room_id/messages` | Legacy project-scoped message create | **Yes** — Turbo Stream append + unread broadcast |
+| GET | `/api/messages/:id` | Get a single message (flat, no room/project needed) | No |
 | PATCH/PUT | `/api/messages/:id` | Update a message (flat) | **Yes** — Turbo Stream replace |
 | DELETE | `/api/messages/:id` | Delete a message (flat) | **Yes** — Turbo Stream remove |
 | GET | `/api/messages/:id/attachment` | Download a message's uploaded file (flat) | No |
-| POST | `/api/projects/:project_id/rooms/:room_id/actions` | Send a real-time action (e.g. typing indicator) on behalf of a user | **Yes** — ActionCable broadcast (that's its only purpose) |
-| POST | `/api/projects/:project_id/rooms/:room_id/decisions` | Approve/confirm/deny/cancel an approval request on behalf of a user | **Yes** — Turbo Stream replace of the approval request card |
+| POST | `/api/rooms/:room_id/actions` | Send a real-time action (e.g. typing indicator) on behalf of a user | **Yes** — ActionCable broadcast (that's its only purpose) |
+| POST | `/api/rooms/:room_id/decisions` | Approve/confirm/deny/cancel an approval request on behalf of a user | **Yes** — Turbo Stream replace of the approval request card |
+| GET | `/api/rooms/:room_id/approval_requests` | List approval requests for a room (paginated or not, includes `count`) | No |
+| POST | `/api/rooms/:room_id/approval_requests` | Create an approval request in a room | **Yes** — Turbo Stream replace of the parent message or approval card |
+| GET | `/api/rooms/:room_id/approval_requests/:id` | Get a single approval request | No |
+| PATCH/PUT | `/api/rooms/:room_id/approval_requests/:id` | Update an approval request | **Yes** — Turbo Stream replace |
+| DELETE | `/api/rooms/:room_id/approval_requests/:id` | Delete an approval request | **Yes** — Turbo Stream replace (message) or remove (standalone) |
+| GET | `/api/projects/:project_id/rooms/:room_id/approval_requests` | Legacy project-scoped approval request listing | No |
+| POST | `/api/projects/:project_id/rooms/:room_id/approval_requests` | Legacy project-scoped approval request create | **Yes** |
+| GET | `/api/projects/:project_id/rooms/:room_id/approval_requests/:id` | Legacy project-scoped approval request lookup | No |
+| PATCH/PUT | `/api/projects/:project_id/rooms/:room_id/approval_requests/:id` | Legacy project-scoped approval request update | **Yes** |
+| DELETE | `/api/projects/:project_id/rooms/:room_id/approval_requests/:id` | Legacy project-scoped approval request delete | **Yes** |
 | GET | `/api/attention_items` | List attention items with optional filtering and pagination | No |
 | GET | `/api/attention_items/:id` | Get a single attention item | No |
 | POST | `/api/attention_items` | Create an attention item | No |
@@ -157,9 +171,11 @@ Returns all projects.
 
 ## Rooms
 
-### `GET /api/projects/:project_id/rooms`
+Room records are first-class entities in the API. The primary contract is room-based: the room id is sufficient to resolve the room, and `project_id` is optional for backward compatibility.
 
-Lists all rooms belonging to the project.
+### `GET /api/rooms`
+
+Lists all rooms.
 
 **Response** `200`
 ```json
@@ -170,32 +186,40 @@ Lists all rooms belonging to the project.
 ]
 ```
 
-### `GET /api/projects/:project_id/rooms/:id`
+### `GET /api/rooms/:id`
 
-Single room lookup, scoped to the project.
+Single room lookup by room id.
 
-**Errors** `404` — project or room not found (or room belongs to a different project).
+**Errors** `404` — room not found.
 
-### `GET /api/projects/:project_id/rooms/:id/threads`
+### `GET /api/rooms/:id/threads`
 
 Returns the room's threads — child rooms whose `parent_id` points to `:id`.
 
 **Response** `200` — array of room objects (same shape as index).
 
-### `GET /api/projects/:project_id/rooms/search?q=<term>`
+### `GET /api/rooms/search?q=<term>`
 
 Fuzzy, case-insensitive substring search on room name, ranked by relevance
 (exact match > starts-with > contains).
 
 **Errors**
 - `400` — missing `q` param
-- `404` — project not found
+
+### Legacy project-scoped room routes
+
+The following project-scoped room endpoints remain supported for compatibility, but they are not required for room-based requests:
+
+- `GET /api/projects/:project_id/rooms`
+- `GET /api/projects/:project_id/rooms/:id`
+- `GET /api/projects/:project_id/rooms/:id/threads`
+- `GET /api/projects/:project_id/rooms/search?q=<term>`
 
 ---
 
 ## Messages
 
-### `GET /api/projects/:project_id/rooms/:room_id/messages`
+### `GET /api/rooms/:room_id/messages`
 
 Supports both modes:
 
@@ -214,7 +238,7 @@ Each message serializes as:
 }
 ```
 
-### `POST /api/projects/:project_id/rooms/:room_id/messages`
+### `POST /api/rooms/:room_id/messages`
 
 Creates a message on behalf of a user. Accepts `body` and/or a multipart
 `attachment` file — at least one is required.
@@ -225,33 +249,44 @@ Creates a message on behalf of a user. Accepts `body` and/or a multipart
 
 **Response** `201` — the created message (same shape as above).
 **Errors**
-- `404` — project, room, or user not found
+- `404` — room or user not found
 - `400` — neither `body` nor `attachment` provided
 - `422` — validation error
 
-### `GET /api/projects/:project_id/rooms/:room_id/messages/:id`
+### `GET /api/rooms/:room_id/messages/:id`
 
 Single message lookup, scoped to the room.
 
-### `PATCH`/`PUT /api/projects/:project_id/rooms/:room_id/messages/:id`
+### `PATCH`/`PUT /api/rooms/:room_id/messages/:id`
 
 Updates a message's `body` and/or `attachment` (at least one required).
 
 **Realtime:** Yes — broadcasts a Turbo Stream replace, mirroring the web app's edit flow.
 
-### `DELETE /api/projects/:project_id/rooms/:room_id/messages/:id`
+### `DELETE /api/rooms/:room_id/messages/:id`
 
 Deletes the message and broadcasts removal. Returns `204 No Content`.
 
 **Realtime:** Yes — broadcasts a Turbo Stream remove.
 
-### `GET /api/projects/:project_id/rooms/:room_id/messages/:id/attachment`
+### `GET /api/rooms/:room_id/messages/:id/attachment`
 
 Streams the message's uploaded file.
 
 **Query param**: `disposition=attachment` forces a download instead of inline display.
 
-**Errors** `404` — project/room/message not found, or message has no attachment.
+**Errors** `404` — room/message not found, or message has no attachment.
+
+### Legacy project-scoped message routes
+
+The following project-scoped message routes are still supported for compatibility:
+
+- `GET /api/projects/:project_id/rooms/:room_id/messages`
+- `POST /api/projects/:project_id/rooms/:room_id/messages`
+- `GET /api/projects/:project_id/rooms/:room_id/messages/:id`
+- `PATCH`/`PUT /api/projects/:project_id/rooms/:room_id/messages/:id`
+- `DELETE /api/projects/:project_id/rooms/:room_id/messages/:id`
+- `GET /api/projects/:project_id/rooms/:room_id/messages/:id/attachment`
 
 ### Flat message routes
 
@@ -269,7 +304,7 @@ Same params, behavior, and responses as their nested counterparts above.
 
 ## Actions
 
-### `POST /api/projects/:project_id/rooms/:room_id/actions`
+### `POST /api/rooms/:room_id/actions`
 
 Broadcasts a real-time action to the room on behalf of a user (e.g. typing
 indicators), the same mechanism the web client uses.
@@ -287,14 +322,14 @@ indicators), the same mechanism the web client uses.
 ```
 
 **Errors**
-- `404` — project, room, or user not found
+- `404` — room or user not found
 - `400` — unsupported `action_type`
 
 ---
 
 ## Decisions
 
-### `POST /api/projects/:project_id/rooms/:room_id/decisions`
+### `POST /api/rooms/:room_id/decisions`
 
 Resolves an approval request (a "decision") on behalf of a user.
 
@@ -316,10 +351,105 @@ Resolves an approval request (a "decision") on behalf of a user.
 ```
 
 **Errors**
-- `404` — project, room, user, or approval request not found (or approval
+- `404` — room, user, or approval request not found (or approval
   request belongs to a different room)
 - `400` — unsupported `decision`
 - `422` — validation error
+
+---
+
+## Approval Requests
+
+Room-scoped CRUD for `ApprovalRequest` records. Approval requests can be attached to a room directly or to a message inside the room (`message_id`).
+
+> **Note:** `POST /api/rooms/:room_id/decisions` is still the preferred way to *resolve* an approval request on behalf of a user. It records an `ApprovalRequestAction`, resolves linked attention items, and may create a `ProjectAdr`. The endpoints below are for managing the raw approval request record.
+
+### `GET /api/rooms/:room_id/approval_requests`
+
+Lists approval requests for a room, most recently requested first.
+
+**Params**:
+- `page` (optional — default: 1)
+- `per_page` (optional — default: 40, max: 200)
+
+**Response** `200` (paginated when `page` is provided):
+```json
+{
+  "count": 2,
+  "page": 1,
+  "per_page": 40,
+  "approval_requests": [
+    {
+      "id": 1,
+      "room_id": 1,
+      "message_id": 5,
+      "agent_id": null,
+      "request_type": "decision",
+      "status": "pending",
+      "requested_at": "...",
+      "resolved_at": null,
+      "resolved_by_id": null,
+      "created_at": "...",
+      "updated_at": "...",
+      "decision_text": "Ship it"
+    }
+  ]
+}
+```
+
+### `GET /api/rooms/:room_id/approval_requests/:id`
+
+Fetches a single approval request.
+
+**Response** `200` — approval request object.
+
+**Errors** `404` — room or approval request not found, or approval request does not belong to the room.
+
+### `POST /api/rooms/:room_id/approval_requests`
+
+Creates a new approval request in the room.
+
+**Params**:
+- `request_type` (required — e.g. `decision`, `knowledge_proposal`)
+- `payload` (optional JSON object)
+- `message_id` (optional — must belong to the room)
+- `agent_id` (optional)
+- `status` (optional — defaults to `pending`)
+- `requested_at` (optional — defaults to current time)
+
+**Realtime:** Yes — if `message_id` is provided, replaces the message presentation in the room; otherwise replaces the standalone approval request card.
+
+**Response** `201` — the created approval request.
+
+**Errors**
+- `404` — room not found
+- `422` — validation error, or `message_id` belongs to a different room
+
+### `PATCH/PUT /api/rooms/:room_id/approval_requests/:id`
+
+Updates an approval request.
+
+**Params**: any of `request_type`, `payload`, `message_id`, `agent_id`, `status`, `requested_at`, `resolved_at`, `resolved_by_id`.
+
+**Status transition note:** If `status` is changed to a resolved state (`approved`, `denied`, or `canceled`) and `resolved_at` is blank, it is automatically set to the current time. Direct status edits here do **not** create `ApprovalRequestAction` records or trigger attention-item/ADR side effects — use `POST /api/rooms/:room_id/decisions` for that.
+
+**Realtime:** Yes — replaces the parent message presentation or approval card.
+
+**Response** `200` — the updated approval request.
+
+**Errors**
+- `404` — room or approval request not found
+- `422` — validation error
+
+### `DELETE /api/rooms/:room_id/approval_requests/:id`
+
+Deletes an approval request.
+
+**Realtime:** Yes — if `message_id` is present, the message presentation is re-rendered without the card; otherwise the standalone card is removed from the room.
+
+**Response** `204 No Content`.
+
+**Errors** `404` — room or approval request not found.
 
 ---
 

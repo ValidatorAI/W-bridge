@@ -1,19 +1,37 @@
+from contextlib import asynccontextmanager
 import html
 import logging
+import os
 import re
 from typing import Any
-import os
-import asyncio
+
 import uvicorn
-import httpx
-from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
-from fastapi.responses import PlainTextResponse
-from sqlalchemy.orm import Session
+from dotenv import load_dotenv
+from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
+
+from bus.cron import start_cron, stop_cron
+from bus.dedupe import build_dedupe_key, claim_dispatch_group
+from bus.executors import submit_space_event
+from bus.queues import SpaceEventQueueItem
+from db.database import SessionLocal
+from db.models import SpaceEvent
 from helpers.helpers import str_to_bool
+from mcp.server import handle_mcp_request
 from schemas.pydantic import SpaceEventInput
 
 
-app = FastAPI()
+load_dotenv()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_cron()
+    yield
+    await stop_cron()
+
+
+app = FastAPI(lifespan=lifespan)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -43,7 +61,100 @@ async def space_events(
 		raise HTTPException(status_code=401, detail="Invalid token")
 
 	logger.info("[Space Event Received]: %s", event.model_dump())
+
+	space_event_id = str(event.id) if event.id is not None else None
+
+	# Dedupe key of the routing unit this event belongs to (see bus/dedupe.py). Rails
+	# emits message_created + ai_question_asked for one user message and delivers them
+	# as independent webhooks, so the key - not the webhook - decides what gets routed.
+	dedupe_key = build_dedupe_key(
+		event_type=event.event_type,
+		group_id=event.group_id,
+		event_data=event.event_data,
+		event_id=event.event_id,
+		space_event_id=space_event_id,
+	)
+
+	row_id = _db_persist_space_event(event, dedupe_key=dedupe_key)
+
+	decision = claim_dispatch_group(
+		dedupe_key=dedupe_key,
+		row_id=row_id,
+		space_event_id=space_event_id,
+	)
+
+	if decision.is_duplicate:
+		# A member of an already claimed group: recorded on its own row and logged as a
+		# duplicate, never queued, so it cannot produce a second dispatch/reply.
+		logger.info(
+			"[Space Event Dedupe] space_event_id=%s is a duplicate member of key=%s (owner=%s); not queued",
+			space_event_id,
+			decision.dedupe_key,
+			decision.duplicate_of_space_event_id,
+		)
+		return PlainTextResponse("", status_code=200)
+
+	await submit_space_event(
+		SpaceEventQueueItem(
+			space_event_id=space_event_id,
+			event_type=event.event_type,
+			event_data=event.event_data,
+			dedupe_key=decision.dedupe_key,
+			space_event_row_id=row_id,
+		)
+	)
+
 	return PlainTextResponse("", status_code=200)
+
+
+def _db_persist_space_event(event: SpaceEventInput, *, dedupe_key: str | None = None) -> int | None:
+	"""Persist the incoming Space event; errors are logged, not raised.
+
+	Returns the internal row id (used as the dedupe claim reference) or None when the
+	row could not be stored.
+	"""
+	db = SessionLocal()
+	try:
+		db_event = SpaceEvent(
+			space_event_id=str(event.id) if event.id is not None else None,
+			event_type=event.event_type,
+			event_id=str(event.event_id) if event.event_id is not None else None,
+			group_id=event.group_id,
+			event_data=event.event_data,
+			created_at=event.created_at,
+			dedupe_key=dedupe_key,
+		)
+		db.add(db_event)
+		db.commit()
+		db.refresh(db_event)
+		return db_event.id
+	except Exception:
+		logger.exception("Failed to persist Space event id=%s", event.id)
+		db.rollback()
+		return None
+	finally:
+		db.close()
+
+
+@app.post("/mcp")
+async def mcp_endpoint(request: Request) -> Response:
+	try:
+		payload = await request.json()
+	except Exception:
+		return JSONResponse(
+			status_code=400,
+			content={
+				"jsonrpc": "2.0",
+				"id": None,
+				"error": {"code": -32700, "message": "Parse error: invalid JSON"},
+			},
+		)
+
+	response_data = await handle_mcp_request(payload)
+	if response_data is None:
+		return Response(status_code=204)
+	return JSONResponse(content=response_data)
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=int(PORT), reload=RELOAD)

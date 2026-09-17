@@ -1,39 +1,28 @@
 import asyncio
+from dataclasses import dataclass
 from typing import Any
 
-from schemas import ChatCompletionsInput, SendChatHistoryInput
+from helpers.environment import BASE_HERMES_PROFILE
 
 
-# Queue for requests targeting agent.hermes.chat_completions
-chat_completions_queue: asyncio.Queue[ChatCompletionsInput] = asyncio.Queue()
+@dataclass
+class SpaceEventQueueItem:
+    """Item queued for processing a Space event through Hermes."""
 
-# Queue for requests targeting agent.hermes_logic.send_chat_history
-send_chat_history_queue: asyncio.Queue[SendChatHistoryInput] = asyncio.Queue()
-
-
-def prepare_chat_completions_input(
-    payload: dict[str, Any],
-    *,
-    session_id: str | None = None,
-    session_key: str | None = None,
-    profile: str | None = None,
-) -> ChatCompletionsInput:
-    return ChatCompletionsInput(
-        payload=payload,
-        session_id=session_id,
-        session_key=session_key,
-        profile=profile,
-    )
+    space_event_id: str | None
+    event_type: str | None
+    event_data: dict[str, Any] | None
+    profile: str = BASE_HERMES_PROFILE
+    # Routing unit of the event (see bus/dedupe.py). None = not deduplicated, dispatch
+    # straight away; a "message:..." key also marks the item for the merge settle window.
+    dedupe_key: str | None = None
+    # Internal row id of the stored event. The Rails event id (space_event_id) is not
+    # unique in the bridge table (a replayed webhook keeps its id), so the row id is the
+    # authoritative reference and is resolved first.
+    space_event_row_id: int | None = None
 
 
-def prepare_send_chat_history_input(
-    history: list[dict[str, Any]],
-    *,
-    session_id: str | None = None,
-    profile: str | None = None,
-) -> SendChatHistoryInput:
-    return SendChatHistoryInput(
-        history=history,
-        session_id=session_id,
-        profile=profile,
-    )
+
+# Queue for incoming Space events to be forwarded to Hermes
+space_events_queue: asyncio.Queue[SpaceEventQueueItem] = asyncio.Queue()
+
