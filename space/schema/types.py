@@ -418,10 +418,152 @@ class ProjectMilestoneList(TypedDict, total=False):
     project_milestones: list[ProjectMilestone]
 
 
+class AiProfile(TypedDict, total=False):
+    id: int
+    profile_name: str
+    bot: bool
+    bot_name: str | None
+    editable: bool
+    tool_sets_editable: bool
+    max_line_sessions: int
+    max_concurrent_sessions: int
+    auto_decompose_per_tick: int
+    max_in_progress_per_profile: int
+    main_model: str | None
+    fallback_model: str | None
+    cloned_from: str | None
+    soul_present: bool
+    soul_length: int
+    created_at: str
+    updated_at: str
+
+
+class AiProfileList(TypedDict, total=False):
+    count: int
+    ai_profiles: list[AiProfile]
+
+
+class AiSetting(TypedDict, total=False):
+    id: int
+    label: str
+    setting_value: int
+    created_at: str
+    updated_at: str
+
+
+class AiSettingList(TypedDict, total=False):
+    count: int
+    ai_settings: list[AiSetting]
+
+
+class McpServer(TypedDict, total=False):
+    id: int
+    name: str
+    transport: str
+    url: str
+    authentication: str
+    status: str
+    command: str | None
+    args: str | None
+    bearer_token_present: bool
+    bearer_token_length: int
+    environment_present: bool
+    environment_length: int
+    created_at: str
+    updated_at: str
+
+
+class McpServerList(TypedDict, total=False):
+    count: int
+    mcps: list[McpServer]
+
+
+class Tool(TypedDict, total=False):
+    id: int
+    name: str
+    active: bool
+    created_at: str
+    updated_at: str
+
+
+class ToolList(TypedDict, total=False):
+    count: int
+    tools: list[Tool]
+
+
+class Skill(TypedDict, total=False):
+    id: int
+    name: str
+    category: str | None
+    description: str | None
+    add_by_default: bool
+    skill_text_present: bool
+    skill_text_length: int
+    created_at: str
+    updated_at: str
+
+
+class SkillList(TypedDict, total=False):
+    count: int
+    skills: list[Skill]
+
+
+class AiProfileTool(TypedDict, total=False):
+    id: int
+    ai_profile_id: int
+    tool_id: int
+    enabled: bool
+    created_at: str
+    updated_at: str
+
+
+class AiProfileToolList(TypedDict, total=False):
+    count: int
+    ai_profile_tools: list[AiProfileTool]
+
+
+class AiProfileSkill(TypedDict, total=False):
+    id: int
+    ai_profile_id: int
+    skill_id: int
+    enabled: bool
+    created_at: str
+    updated_at: str
+
+
+class AiProfileSkillList(TypedDict, total=False):
+    count: int
+    ai_profile_skills: list[AiProfileSkill]
+
+
+class AiProfileMcp(TypedDict, total=False):
+    id: int
+    ai_profile_id: int
+    mcp_id: int
+    active: bool
+    created_at: str
+    updated_at: str
+
+
+class AiProfileMcpList(TypedDict, total=False):
+    count: int
+    ai_profile_mcps: list[AiProfileMcp]
+
+
 __all__ = [
     "ActionAck",
     "Adr",
     "AdrList",
+    "AiProfile",
+    "AiProfileList",
+    "AiProfileMcp",
+    "AiProfileMcpList",
+    "AiProfileSkill",
+    "AiProfileSkillList",
+    "AiProfileTool",
+    "AiProfileToolList",
+    "AiSetting",
+    "AiSettingList",
     "AllHandsActionItem",
     "AllHandsActionItemList",
     "AllHandsDecision",
@@ -429,6 +571,7 @@ __all__ = [
     "AllHandsTakeaway",
     "AllHandsTakeawayList",
     "ApprovalRequest",
+    "ApprovalRequestList",
     "AttentionItem",
     "AttentionItemList",
     "CompanyStatusItem",
@@ -443,6 +586,8 @@ __all__ = [
     "KnowledgeActivityList",
     "KnowledgeItem",
     "KnowledgeItemList",
+    "McpServer",
+    "McpServerList",
     "Message",
     "MessageList",
     "ObsidianNote",
@@ -457,4 +602,8 @@ __all__ = [
     "ProjectUser",
     "ProjectUserList",
     "Room",
+    "Skill",
+    "SkillList",
+    "Tool",
+    "ToolList",
 ]

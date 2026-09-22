@@ -62,6 +62,22 @@ update to connected web clients in that room, in addition to the JSON response.
 | POST | `/api/company_status_items` | Create a company status item | No |
 | PATCH/PUT | `/api/company_status_items/:id` | Update a company status item | No |
 | DELETE | `/api/company_status_items/:id` | Delete a company status item | No |
+| GET | `/api/ai_profiles` | List AI profiles | No |
+| GET | `/api/ai_profiles/:id` | Get a single AI profile | No |
+| GET | `/api/ai_settings` | List AI settings | No |
+| GET | `/api/ai_settings/:id` | Get a single AI setting | No |
+| GET | `/api/mcps` | List MCP servers | No |
+| GET | `/api/mcps/:id` | Get a single MCP server | No |
+| GET | `/api/tools` | List tools | No |
+| GET | `/api/tools/:id` | Get a single tool | No |
+| GET | `/api/skills` | List skills | No |
+| GET | `/api/skills/:id` | Get a single skill | No |
+| GET | `/api/ai_profile_tools` | List AI profile-tool assignments (filter by `ai_profile_id`, `tool_id`) | No |
+| GET | `/api/ai_profile_tools/:id` | Get a single AI profile-tool assignment | No |
+| GET | `/api/ai_profile_skills` | List AI profile-skill assignments (filter by `ai_profile_id`, `skill_id`) | No |
+| GET | `/api/ai_profile_skills/:id` | Get a single AI profile-skill assignment | No |
+| GET | `/api/ai_profile_mcps` | List AI profile-MCP assignments (filter by `ai_profile_id`, `mcp_id`) | No |
+| GET | `/api/ai_profile_mcps/:id` | Get a single AI profile-MCP assignment | No |
 | GET | `/api/projects/:project_id/users` | List project members (paginated) | No |
 | GET | `/api/projects/:project_id/users/:id` | Get a single project member | No |
 | GET | `/api/projects/:project_id/project_all_hands_takeaways` | List project all-hands takeaways (optional `active` filter & paginated) | No |

@@ -399,6 +399,70 @@ async def delete_company_status_item(item_id: int | str) -> None
 
 ---
 
+## AI Config Entities
+
+| Function | Endpoint |
+|---|---|
+| `list_ai_profiles` | `GET /api/ai_profiles` |
+| `get_ai_profile` | `GET /api/ai_profiles/:id` |
+| `list_ai_settings` | `GET /api/ai_settings` |
+| `get_ai_setting` | `GET /api/ai_settings/:id` |
+| `list_mcps` | `GET /api/mcps` |
+| `get_mcp` | `GET /api/mcps/:id` |
+| `list_tools` | `GET /api/tools` |
+| `get_tool` | `GET /api/tools/:id` |
+| `list_skills` | `GET /api/skills` |
+| `get_skill` | `GET /api/skills/:id` |
+| `list_ai_profile_tools` | `GET /api/ai_profile_tools` |
+| `get_ai_profile_tool` | `GET /api/ai_profile_tools/:id` |
+| `list_ai_profile_skills` | `GET /api/ai_profile_skills` |
+| `get_ai_profile_skill` | `GET /api/ai_profile_skills/:id` |
+| `list_ai_profile_mcps` | `GET /api/ai_profile_mcps` |
+| `get_ai_profile_mcp` | `GET /api/ai_profile_mcps/:id` |
+
+```python
+async def list_ai_profiles() -> AiProfileList
+async def get_ai_profile(ai_profile_id: int | str) -> AiProfile
+
+async def list_ai_settings() -> AiSettingList
+async def get_ai_setting(ai_setting_id: int | str) -> AiSetting
+
+async def list_mcps() -> McpServerList
+async def get_mcp(mcp_id: int | str) -> McpServer
+
+async def list_tools() -> ToolList
+async def get_tool(tool_id: int | str) -> Tool
+
+async def list_skills() -> SkillList
+async def get_skill(skill_id: int | str) -> Skill
+
+async def list_ai_profile_tools(
+    *,
+    ai_profile_id: int | str | None = None,
+    tool_id: int | str | None = None,
+) -> AiProfileToolList
+async def get_ai_profile_tool(ai_profile_tool_id: int | str) -> AiProfileTool
+
+async def list_ai_profile_skills(
+    *,
+    ai_profile_id: int | str | None = None,
+    skill_id: int | str | None = None,
+) -> AiProfileSkillList
+async def get_ai_profile_skill(ai_profile_skill_id: int | str) -> AiProfileSkill
+
+async def list_ai_profile_mcps(
+    *,
+    ai_profile_id: int | str | None = None,
+    mcp_id: int | str | None = None,
+) -> AiProfileMcpList
+async def get_ai_profile_mcp(ai_profile_mcp_id: int | str) -> AiProfileMcp
+```
+
+Assignment list endpoints support optional filters. Sensitive text fields from Bonfire AI config
+responses are represented as metadata booleans/lengths, not raw secret values.
+
+---
+
 ## Project Users
 
 | Function | Endpoint |

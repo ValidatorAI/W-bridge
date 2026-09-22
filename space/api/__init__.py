@@ -2,6 +2,11 @@
 
 from ._client import aclose_client
 from .actions import send_action
+from .ai_profiles import get_ai_profile, list_ai_profiles
+from .ai_profile_mcps import get_ai_profile_mcp, list_ai_profile_mcps
+from .ai_profile_skills import get_ai_profile_skill, list_ai_profile_skills
+from .ai_profile_tools import get_ai_profile_tool, list_ai_profile_tools
+from .ai_settings import get_ai_setting, list_ai_settings
 from .adrs import (
     create_adr,
     delete_adr,
@@ -83,6 +88,7 @@ from .messages import (
     update_message,
     update_message_by_id,
 )
+from .mcps import get_mcp, list_mcps
 from .obsidian_notes import (
     create_obsidian_note,
     delete_obsidian_note,
@@ -131,6 +137,8 @@ from .project_todos import (
 from .project_users import get_project_user, list_project_users
 from .projects import get_project, list_projects
 from .rooms import get_room, list_room_threads, list_rooms, search_rooms
+from .skills import get_skill, list_skills
+from .tools import get_tool, list_tools
 
 
 __all__ = [
@@ -175,6 +183,11 @@ __all__ = [
     "download_message_attachment",
     "filter_company_status_items",
     "get_adr",
+    "get_ai_profile",
+    "get_ai_profile_mcp",
+    "get_ai_profile_skill",
+    "get_ai_profile_tool",
+    "get_ai_setting",
     "get_all_hands_action_item",
     "get_all_hands_decision",
     "get_all_hands_takeaway",
@@ -189,6 +202,7 @@ __all__ = [
     "get_external_asset",
     "get_knowledge_activity",
     "get_knowledge_item",
+    "get_mcp",
     "get_message",
     "get_message_by_id",
     "get_obsidian_note",
@@ -198,7 +212,14 @@ __all__ = [
     "get_project_todo",
     "get_project_user",
     "get_room",
+    "get_skill",
+    "get_tool",
     "list_adrs",
+    "list_ai_profiles",
+    "list_ai_profile_mcps",
+    "list_ai_profile_skills",
+    "list_ai_profile_tools",
+    "list_ai_settings",
     "list_all_hands_action_items",
     "list_all_hands_decisions",
     "list_all_hands_takeaways",
@@ -211,6 +232,7 @@ __all__ = [
     "list_external_assets",
     "list_knowledge_activities",
     "list_knowledge_items",
+    "list_mcps",
     "list_messages",
     "list_obsidian_notes",
     "list_project_bottlenecks",
@@ -220,6 +242,8 @@ __all__ = [
     "list_projects",
     "list_room_threads",
     "list_rooms",
+    "list_skills",
+    "list_tools",
     "search_rooms",
     "send_action",
     "update_adr",
