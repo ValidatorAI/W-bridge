@@ -210,6 +210,23 @@ class TestMCP(unittest.TestCase):
             "add_approval_request",
             "edit_approval_request",
             "delete_approval_request",
+            # AI Config Tools
+            "list_ai_profiles",
+            "get_ai_profile",
+            "list_ai_settings",
+            "get_ai_setting",
+            "list_mcps",
+            "get_mcp",
+            "list_tools",
+            "get_tool",
+            "list_skills",
+            "get_skill",
+            "list_ai_profile_tools",
+            "get_ai_profile_tool",
+            "list_ai_profile_skills",
+            "get_ai_profile_skill",
+            "list_ai_profile_mcps",
+            "get_ai_profile_mcp",
         ]
         for name in expected_tools:
             self.assertIn(name, tool_names)
@@ -340,6 +357,60 @@ class TestMCP(unittest.TestCase):
             self.assertFalse(data["result"]["isError"], data["result"])
             self.assertIn("content", data["result"])
             self.assertTrue(len(data["result"]["content"]) > 0)
+
+    def test_mcp_tools_call_ai_config(self):
+        sample_tools = [
+            ("list_ai_profiles", {}),
+            ("get_ai_profile", {"ai_profile_id": 1}),
+            ("list_ai_settings", {}),
+            ("get_ai_setting", {"ai_setting_id": 2}),
+            ("list_mcps", {}),
+            ("get_mcp", {"mcp_id": 3}),
+            ("list_tools", {}),
+            ("get_tool", {"tool_id": 4}),
+            ("list_skills", {}),
+            ("get_skill", {"skill_id": 5}),
+            ("list_ai_profile_tools", {"ai_profile_id": 1, "tool_id": 4}),
+            ("get_ai_profile_tool", {"ai_profile_tool_id": 6}),
+            ("list_ai_profile_skills", {"ai_profile_id": 1, "skill_id": 5}),
+            ("get_ai_profile_skill", {"ai_profile_skill_id": 7}),
+            ("list_ai_profile_mcps", {"ai_profile_id": 1, "mcp_id": 3}),
+            ("get_ai_profile_mcp", {"ai_profile_mcp_id": 8}),
+        ]
+
+        with (
+            patch("mcp.tools.list_ai_profiles", return_value={"ai_profiles": []}),
+            patch("mcp.tools.get_ai_profile", return_value={"id": 1}),
+            patch("mcp.tools.list_ai_settings", return_value={"ai_settings": []}),
+            patch("mcp.tools.get_ai_setting", return_value={"id": 2}),
+            patch("mcp.tools.list_mcps", return_value={"mcps": []}),
+            patch("mcp.tools.get_mcp", return_value={"id": 3}),
+            patch("mcp.tools.list_tools", return_value={"tools": []}),
+            patch("mcp.tools.get_tool", return_value={"id": 4}),
+            patch("mcp.tools.list_skills", return_value={"skills": []}),
+            patch("mcp.tools.get_skill", return_value={"id": 5}),
+            patch("mcp.tools.list_ai_profile_tools", return_value={"ai_profile_tools": []}),
+            patch("mcp.tools.get_ai_profile_tool", return_value={"id": 6}),
+            patch("mcp.tools.list_ai_profile_skills", return_value={"ai_profile_skills": []}),
+            patch("mcp.tools.get_ai_profile_skill", return_value={"id": 7}),
+            patch("mcp.tools.list_ai_profile_mcps", return_value={"ai_profile_mcps": []}),
+            patch("mcp.tools.get_ai_profile_mcp", return_value={"id": 8}),
+        ):
+            for name, arguments in sample_tools:
+                response = self.client.post(
+                    "/mcp",
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 102,
+                        "method": "tools/call",
+                        "params": {"name": name, "arguments": arguments},
+                    },
+                )
+                self.assertEqual(response.status_code, 200, f"Tool {name} failed")
+                data = response.json()
+                self.assertFalse(data["result"]["isError"], f"Tool {name} returned error: {data['result']}")
+                self.assertIn("content", data["result"])
+                self.assertTrue(len(data["result"]["content"]) > 0)
 
     def test_mcp_tools_call_hello(self):
         response = self.client.post(

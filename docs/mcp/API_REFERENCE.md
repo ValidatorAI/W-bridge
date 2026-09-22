@@ -209,6 +209,7 @@ Tool names are exposed dynamically through `tools/list`. They include:
 - Project Knowledge tools
 - Room tools (message/action/decision helpers)
 - Approval Request tools
+- AI Config tools (profiles, settings, MCP servers, tools, skills, and profile assignments)
 - Alias names (PascalCase and compatibility aliases)
 
 To stay accurate with code changes, always use `tools/list` at runtime instead of hard-coding tool names.

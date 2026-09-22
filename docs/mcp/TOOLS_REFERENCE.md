@@ -2,8 +2,8 @@
 
 This document explains each MCP tool exposed through the `tools/list` and `tools/call` JSON-RPC methods.
 
-- Total tools in registry: `155`
-- Canonical tools: `96`
+- Total tools in registry: `171`
+- Canonical tools: `112`
 - Alias tools: `59`
 
 ## How MCP Tools Are Called
@@ -205,6 +205,27 @@ Tool outputs are returned as text content in `result.content`, and failures set 
 | `delete_approval_request` | Delete an approval request from a room |
 | `edit_approval_request` | Update an approval request in a room |
 | `get_approval_request` | Get a single approval request in a room |
+
+### AI Config
+
+| Tool | Purpose |
+|---|---|
+| `list_ai_profiles` | List AI profiles |
+| `get_ai_profile` | Get a single AI profile |
+| `list_ai_settings` | List AI settings |
+| `get_ai_setting` | Get a single AI setting |
+| `list_mcps` | List MCP servers |
+| `get_mcp` | Get a single MCP server |
+| `list_tools` | List AI tools |
+| `get_tool` | Get a single AI tool |
+| `list_skills` | List AI skills |
+| `get_skill` | Get a single AI skill |
+| `list_ai_profile_tools` | List AI profile-tool assignments (optional `ai_profile_id`, `tool_id` filters) |
+| `get_ai_profile_tool` | Get a single AI profile-tool assignment |
+| `list_ai_profile_skills` | List AI profile-skill assignments (optional `ai_profile_id`, `skill_id` filters) |
+| `get_ai_profile_skill` | Get a single AI profile-skill assignment |
+| `list_ai_profile_mcps` | List AI profile-MCP assignments (optional `ai_profile_id`, `mcp_id` filters) |
+| `get_ai_profile_mcp` | Get a single AI profile-MCP assignment |
 
 ## Alias Tools (Compatibility Names)
 

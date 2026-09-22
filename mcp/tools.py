@@ -55,6 +55,11 @@ from space.api import (
     delete_project_todo,
     filter_company_status_items,
     get_adr,
+    get_ai_profile,
+    get_ai_profile_mcp,
+    get_ai_profile_skill,
+    get_ai_profile_tool,
+    get_ai_setting,
     get_all_hands_action_item,
     get_all_hands_decision,
     get_all_hands_takeaway,
@@ -69,11 +74,19 @@ from space.api import (
     get_external_asset,
     get_knowledge_activity,
     get_knowledge_item,
+    get_mcp,
     get_obsidian_note,
     get_project_bottleneck,
     get_project_milestone,
     get_project_todo,
+    get_skill,
+    get_tool,
     list_adrs,
+    list_ai_profiles,
+    list_ai_profile_mcps,
+    list_ai_profile_skills,
+    list_ai_profile_tools,
+    list_ai_settings,
     list_all_hands_action_items,
     list_all_hands_decisions,
     list_all_hands_takeaways,
@@ -85,10 +98,13 @@ from space.api import (
     list_external_assets,
     list_knowledge_activities,
     list_knowledge_items,
+    list_mcps,
     list_obsidian_notes,
     list_project_bottlenecks,
     list_project_milestones,
     list_project_todos,
+    list_skills,
+    list_tools,
     send_action,
     update_adr,
     update_all_hands_action_item,
@@ -2248,6 +2264,111 @@ async def delete_approval_request_tool(
 
 
 # ============================================================================
+# 9. AI Config Tools
+# ============================================================================
+
+async def list_ai_profiles_tool(**kwargs: Any) -> str:
+    result = await list_ai_profiles()
+    return _format_result(result)
+
+
+async def get_ai_profile_tool(ai_profile_id: Any, **kwargs: Any) -> str:
+    result = await get_ai_profile(ai_profile_id)
+    return _format_result(result)
+
+
+async def list_ai_settings_tool(**kwargs: Any) -> str:
+    result = await list_ai_settings()
+    return _format_result(result)
+
+
+async def get_ai_setting_tool(ai_setting_id: Any, **kwargs: Any) -> str:
+    result = await get_ai_setting(ai_setting_id)
+    return _format_result(result)
+
+
+async def list_mcps_tool(**kwargs: Any) -> str:
+    result = await list_mcps()
+    return _format_result(result)
+
+
+async def get_mcp_tool(mcp_id: Any, **kwargs: Any) -> str:
+    result = await get_mcp(mcp_id)
+    return _format_result(result)
+
+
+async def list_tools_tool(**kwargs: Any) -> str:
+    result = await list_tools()
+    return _format_result(result)
+
+
+async def get_tool_tool(tool_id: Any, **kwargs: Any) -> str:
+    result = await get_tool(tool_id)
+    return _format_result(result)
+
+
+async def list_skills_tool(**kwargs: Any) -> str:
+    result = await list_skills()
+    return _format_result(result)
+
+
+async def get_skill_tool(skill_id: Any, **kwargs: Any) -> str:
+    result = await get_skill(skill_id)
+    return _format_result(result)
+
+
+async def list_ai_profile_tools_tool(
+    ai_profile_id: Any = None,
+    tool_id: Any = None,
+    **kwargs: Any,
+) -> str:
+    result = await list_ai_profile_tools(
+        ai_profile_id=ai_profile_id,
+        tool_id=tool_id,
+    )
+    return _format_result(result)
+
+
+async def get_ai_profile_tool_link(ai_profile_tool_id: Any, **kwargs: Any) -> str:
+    result = await get_ai_profile_tool(ai_profile_tool_id)
+    return _format_result(result)
+
+
+async def list_ai_profile_skills_tool(
+    ai_profile_id: Any = None,
+    skill_id: Any = None,
+    **kwargs: Any,
+) -> str:
+    result = await list_ai_profile_skills(
+        ai_profile_id=ai_profile_id,
+        skill_id=skill_id,
+    )
+    return _format_result(result)
+
+
+async def get_ai_profile_skill_tool(ai_profile_skill_id: Any, **kwargs: Any) -> str:
+    result = await get_ai_profile_skill(ai_profile_skill_id)
+    return _format_result(result)
+
+
+async def list_ai_profile_mcps_tool(
+    ai_profile_id: Any = None,
+    mcp_id: Any = None,
+    **kwargs: Any,
+) -> str:
+    result = await list_ai_profile_mcps(
+        ai_profile_id=ai_profile_id,
+        mcp_id=mcp_id,
+    )
+    return _format_result(result)
+
+
+async def get_ai_profile_mcp_tool(ai_profile_mcp_id: Any, **kwargs: Any) -> str:
+    result = await get_ai_profile_mcp(ai_profile_mcp_id)
+    return _format_result(result)
+
+
+# ============================================================================
 # Tool Registry and Definitions
 # ============================================================================
 
@@ -2486,6 +2607,23 @@ TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
     "EditApprovalRequest": edit_approval_request,
     "delete_approval_request": delete_approval_request_tool,
     "DeleteApprovalRequest": delete_approval_request_tool,
+    # AI Config Tools
+    "list_ai_profiles": list_ai_profiles_tool,
+    "get_ai_profile": get_ai_profile_tool,
+    "list_ai_settings": list_ai_settings_tool,
+    "get_ai_setting": get_ai_setting_tool,
+    "list_mcps": list_mcps_tool,
+    "get_mcp": get_mcp_tool,
+    "list_tools": list_tools_tool,
+    "get_tool": get_tool_tool,
+    "list_skills": list_skills_tool,
+    "get_skill": get_skill_tool,
+    "list_ai_profile_tools": list_ai_profile_tools_tool,
+    "get_ai_profile_tool": get_ai_profile_tool_link,
+    "list_ai_profile_skills": list_ai_profile_skills_tool,
+    "get_ai_profile_skill": get_ai_profile_skill_tool,
+    "list_ai_profile_mcps": list_ai_profile_mcps_tool,
+    "get_ai_profile_mcp": get_ai_profile_mcp_tool,
 }
 
 _TOOL_METADATA = [
@@ -3980,6 +4118,168 @@ _TOOL_METADATA = [
                 "approval_request_id": {"type": ["string", "integer"], "description": "Approval request ID"},
             },
             "required": ["approval_request_id"],
+        },
+    ),
+    # AI Config Tools
+    (
+        "list_ai_profiles",
+        "List AI profiles",
+        {
+            "type": "object",
+            "properties": {},
+        },
+    ),
+    (
+        "get_ai_profile",
+        "Get a single AI profile",
+        {
+            "type": "object",
+            "properties": {
+                "ai_profile_id": {"type": ["string", "integer"], "description": "AI profile ID"},
+            },
+            "required": ["ai_profile_id"],
+        },
+    ),
+    (
+        "list_ai_settings",
+        "List AI settings",
+        {
+            "type": "object",
+            "properties": {},
+        },
+    ),
+    (
+        "get_ai_setting",
+        "Get a single AI setting",
+        {
+            "type": "object",
+            "properties": {
+                "ai_setting_id": {"type": ["string", "integer"], "description": "AI setting ID"},
+            },
+            "required": ["ai_setting_id"],
+        },
+    ),
+    (
+        "list_mcps",
+        "List MCP servers",
+        {
+            "type": "object",
+            "properties": {},
+        },
+    ),
+    (
+        "get_mcp",
+        "Get a single MCP server",
+        {
+            "type": "object",
+            "properties": {
+                "mcp_id": {"type": ["string", "integer"], "description": "MCP server ID"},
+            },
+            "required": ["mcp_id"],
+        },
+    ),
+    (
+        "list_tools",
+        "List AI tools",
+        {
+            "type": "object",
+            "properties": {},
+        },
+    ),
+    (
+        "get_tool",
+        "Get a single AI tool",
+        {
+            "type": "object",
+            "properties": {
+                "tool_id": {"type": ["string", "integer"], "description": "AI tool ID"},
+            },
+            "required": ["tool_id"],
+        },
+    ),
+    (
+        "list_skills",
+        "List AI skills",
+        {
+            "type": "object",
+            "properties": {},
+        },
+    ),
+    (
+        "get_skill",
+        "Get a single AI skill",
+        {
+            "type": "object",
+            "properties": {
+                "skill_id": {"type": ["string", "integer"], "description": "AI skill ID"},
+            },
+            "required": ["skill_id"],
+        },
+    ),
+    (
+        "list_ai_profile_tools",
+        "List AI profile-tool assignments",
+        {
+            "type": "object",
+            "properties": {
+                "ai_profile_id": {"type": ["string", "integer"], "description": "Filter by AI profile ID"},
+                "tool_id": {"type": ["string", "integer"], "description": "Filter by tool ID"},
+            },
+        },
+    ),
+    (
+        "get_ai_profile_tool",
+        "Get a single AI profile-tool assignment",
+        {
+            "type": "object",
+            "properties": {
+                "ai_profile_tool_id": {"type": ["string", "integer"], "description": "AI profile-tool assignment ID"},
+            },
+            "required": ["ai_profile_tool_id"],
+        },
+    ),
+    (
+        "list_ai_profile_skills",
+        "List AI profile-skill assignments",
+        {
+            "type": "object",
+            "properties": {
+                "ai_profile_id": {"type": ["string", "integer"], "description": "Filter by AI profile ID"},
+                "skill_id": {"type": ["string", "integer"], "description": "Filter by skill ID"},
+            },
+        },
+    ),
+    (
+        "get_ai_profile_skill",
+        "Get a single AI profile-skill assignment",
+        {
+            "type": "object",
+            "properties": {
+                "ai_profile_skill_id": {"type": ["string", "integer"], "description": "AI profile-skill assignment ID"},
+            },
+            "required": ["ai_profile_skill_id"],
+        },
+    ),
+    (
+        "list_ai_profile_mcps",
+        "List AI profile-MCP assignments",
+        {
+            "type": "object",
+            "properties": {
+                "ai_profile_id": {"type": ["string", "integer"], "description": "Filter by AI profile ID"},
+                "mcp_id": {"type": ["string", "integer"], "description": "Filter by MCP server ID"},
+            },
+        },
+    ),
+    (
+        "get_ai_profile_mcp",
+        "Get a single AI profile-MCP assignment",
+        {
+            "type": "object",
+            "properties": {
+                "ai_profile_mcp_id": {"type": ["string", "integer"], "description": "AI profile-MCP assignment ID"},
+            },
+            "required": ["ai_profile_mcp_id"],
         },
     ),
 ]
