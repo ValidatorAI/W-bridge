@@ -3,6 +3,7 @@ import html
 import logging
 import os
 import re
+from pathlib import Path
 from typing import Any
 
 import uvicorn
@@ -40,6 +41,25 @@ ROOM_BASE_URL = os.getenv("ROOM_BASE_URL", "https://chat.nvgtrs.io").rstrip("/")
 PORT = os.getenv("PORT", "80")
 RELOAD = str_to_bool(os.getenv("RELOAD", "False"))
 OUTPUT_EVENTS_TOKEN = os.getenv("OUTPUT_EVENTS_TOKEN")
+RESTART_TRIGGER_PATH = Path(os.getenv("RESTART_TRIGGER_PATH", "/triggers/restart"))
+
+
+@app.api_route("/restart", methods=["GET", "POST"])
+async def restart() -> JSONResponse:
+	try:
+		RESTART_TRIGGER_PATH.parent.mkdir(parents=True, exist_ok=True)
+		RESTART_TRIGGER_PATH.touch(exist_ok=True)
+		return JSONResponse(
+			status_code=200,
+			content={"status": "ok", "path": str(RESTART_TRIGGER_PATH)},
+		)
+	except OSError as exc:
+		logger.exception("Failed to touch restart trigger at %s", RESTART_TRIGGER_PATH)
+		return JSONResponse(
+			status_code=500,
+			content={"status": "error", "detail": str(exc)},
+		)
+
 
 """
 @app.post("/webhook")

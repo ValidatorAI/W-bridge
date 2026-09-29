@@ -1,5 +1,6 @@
 import asyncio
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -12,6 +13,18 @@ from mcp.tools import hello
 class TestMCP(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
+
+    def test_restart_creates_trigger_file(self):
+        trigger_path = Path("/tmp/w-bridge-restart-test")
+        with (
+            patch("main.RESTART_TRIGGER_PATH", trigger_path),
+            patch("main.Path.touch") as touch_mock,
+        ):
+            response = self.client.post("/restart")
+
+        self.assertEqual(response.status_code, 200)
+        touch_mock.assert_called_once_with(exist_ok=True)
+        self.assertEqual(response.json()["path"], str(trigger_path))
 
     def test_hello_tool_function(self):
         self.assertEqual(hello(), "Hello, World!")
