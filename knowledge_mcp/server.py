@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from mcp.tools import hello
+from knowledge_mcp.core import call_tool, list_tools
 
 logger = logging.getLogger(__name__)
 
@@ -10,20 +10,7 @@ SERVER_INFO = {
     "name": "w-bridge-knowledge-mcp",
     "version": "1.0.0",
 }
-
-TOOL_DEFINITIONS = [
-    {
-        "name": "hello",
-        "description": "Say hello to a given name or the world",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string", "description": "The name to greet", "default": "World"},
-            },
-            "required": [],
-        },
-    }
-]
+SERVER_CAPABILITIES = {"tools": {}}
 
 
 def _jsonrpc_error(code: int, message: str, req_id: Any = None, data: Any = None) -> dict[str, Any]:
@@ -64,7 +51,7 @@ async def handle_knowledge_mcp_request(payload: dict[str, Any]) -> dict[str, Any
     if method == "initialize":
         result = {
             "protocolVersion": MCP_PROTOCOL_VERSION,
-            "capabilities": {"tools": {}},
+            "capabilities": SERVER_CAPABILITIES,
             "serverInfo": SERVER_INFO,
         }
         return _jsonrpc_result(result, req_id)
@@ -78,7 +65,7 @@ async def handle_knowledge_mcp_request(payload: dict[str, Any]) -> dict[str, Any
         return _jsonrpc_result({}, req_id)
 
     if method == "tools/list":
-        return _jsonrpc_result({"tools": TOOL_DEFINITIONS}, req_id)
+        return _jsonrpc_result({"tools": list_tools()}, req_id)
 
     if method == "tools/call":
         tool_name = params.get("name")
@@ -89,16 +76,8 @@ async def handle_knowledge_mcp_request(payload: dict[str, Any]) -> dict[str, Any
         if arguments is not None and not isinstance(arguments, dict):
             return _jsonrpc_error(-32602, "Invalid params: 'arguments' must be an object", req_id)
 
-        arguments = arguments or {}
-
-        if tool_name != "hello":
-            return _jsonrpc_result(
-                {"content": [{"type": "text", "text": f"Tool '{tool_name}' not found."}], "isError": True},
-                req_id,
-            )
-
-        message = hello(arguments.get("name", "World"))
-        return _jsonrpc_result({"content": [{"type": "text", "text": message}], "isError": False}, req_id)
+        tool_result = await call_tool(tool_name, arguments, request_id=req_id)
+        return _jsonrpc_result(tool_result, req_id)
 
     if is_notification:
         return None

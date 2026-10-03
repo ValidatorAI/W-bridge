@@ -30,6 +30,66 @@ class TestMCP(unittest.TestCase):
         self.assertEqual(hello(), "Hello, World!")
         self.assertEqual(hello("Developer"), "Hello, Developer!")
 
+    def test_knowledge_mcp_hello_only(self):
+        response = self.client.post(
+            "/knowledge-mcp",
+            json={
+                "jsonrpc": "2.0",
+                "id": 1001,
+                "method": "initialize",
+                "params": {},
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["jsonrpc"], "2.0")
+        self.assertEqual(data["id"], 1001)
+        self.assertEqual(data["result"]["serverInfo"]["name"], "w-bridge-knowledge-mcp")
+        self.assertIn("tools", data["result"]["capabilities"])
+
+        list_response = self.client.post(
+            "/knowledge-mcp",
+            json={
+                "jsonrpc": "2.0",
+                "id": 1002,
+                "method": "tools/list",
+                "params": {},
+            },
+        )
+        self.assertEqual(list_response.status_code, 200)
+        tool_names = {tool["name"] for tool in list_response.json()["result"]["tools"]}
+        self.assertIn("hello", tool_names)
+        self.assertNotIn("add_project_knowledge_item", tool_names)
+        self.assertNotIn("edit_project_knowledge_item", tool_names)
+        self.assertNotIn("delete_project_knowledge_item", tool_names)
+
+        hello_response = self.client.post(
+            "/knowledge-mcp",
+            json={
+                "jsonrpc": "2.0",
+                "id": 1003,
+                "method": "tools/call",
+                "params": {"name": "hello", "arguments": {"name": "Ada"}},
+            },
+        )
+        self.assertEqual(hello_response.status_code, 200)
+        hello_data = hello_response.json()
+        self.assertFalse(hello_data["result"]["isError"])
+        self.assertEqual(hello_data["result"]["content"][0]["text"], "Hello, Ada!")
+
+        disallowed = self.client.post(
+            "/knowledge-mcp",
+            json={
+                "jsonrpc": "2.0",
+                "id": 1004,
+                "method": "tools/call",
+                "params": {"name": "add_project_knowledge_item", "arguments": {"title": "bad"}},
+            },
+        )
+        self.assertEqual(disallowed.status_code, 200)
+        self.assertTrue(disallowed.json()["result"]["isError"])
+        self.assertIn("not found", disallowed.json()["result"]["content"][0]["text"].lower())
+
     def test_list_tools_contains_hello(self):
         tools = list_tools()
         self.assertTrue(any(tool["name"] == "hello" for tool in tools))
