@@ -59,6 +59,10 @@ class TestMCP(unittest.TestCase):
         self.assertEqual(list_response.status_code, 200)
         tool_names = {tool["name"] for tool in list_response.json()["result"]["tools"]}
         self.assertIn("hello", tool_names)
+        self.assertIn("decisions_waiting", tool_names)
+        self.assertIn("project_milestones", tool_names)
+        self.assertIn("list_ai_profiles", tool_names)
+        self.assertIn("get_ai_profile", tool_names)
         self.assertNotIn("add_project_knowledge_item", tool_names)
         self.assertNotIn("edit_project_knowledge_item", tool_names)
         self.assertNotIn("delete_project_knowledge_item", tool_names)
@@ -223,13 +227,6 @@ class TestMCP(unittest.TestCase):
         expected_tools = [
             "hello",
             # Company Home
-            "decisions_waiting",
-            "blockers",
-            "outcomes_review",
-            "mentions",
-            "material_changes",
-            "ai_confirm",
-            "knowledge_proposals",
             "add_decisions_waiting",
             "edit_decisions_waiting",
             "add_blockers",
@@ -278,8 +275,6 @@ class TestMCP(unittest.TestCase):
             "add_decision_message",
             # Approval Request Tools
             "add_approve_request_with_message",
-            "approval_requests",
-            "get_approval_request",
             "add_approval_request",
             "edit_approval_request",
             "delete_approval_request",
@@ -301,6 +296,11 @@ class TestMCP(unittest.TestCase):
             "list_ai_profile_mcps",
             "get_ai_profile_mcp",
         ]
+        self.assertNotIn("decisions_waiting", tool_names)
+        self.assertNotIn("approval_requests", tool_names)
+        self.assertNotIn("get_approval_request", tool_names)
+        self.assertNotIn("blockers", tool_names)
+        self.assertNotIn("mentions", tool_names)
         for name in expected_tools:
             self.assertIn(name, tool_names)
 
