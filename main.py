@@ -18,6 +18,7 @@ from bus.queues import SpaceEventQueueItem
 from db.database import SessionLocal
 from db.models import SpaceEvent
 from helpers.helpers import str_to_bool
+from model_context_protocol.read.server import handle_knowledge_mcp_request as handle_read_mcp_request
 from model_context_protocol.knowledge.server import handle_knowledge_mcp_request
 from model_context_protocol.task.server import handle_task_mcp_request
 from model_context_protocol.action.server import handle_mcp_request
@@ -158,8 +159,8 @@ def _db_persist_space_event(event: SpaceEventInput, *, dedupe_key: str | None = 
 		db.close()
 
 
-@app.post("/mcp")
-async def mcp_endpoint(request: Request) -> Response:
+@app.post("/action-mcp")
+async def action_mcp_endpoint(request: Request) -> Response:
 	try:
 		payload = await request.json()
 	except Exception:
@@ -173,6 +174,26 @@ async def mcp_endpoint(request: Request) -> Response:
 		)
 
 	response_data = await handle_mcp_request(payload)
+	if response_data is None:
+		return Response(status_code=204)
+	return JSONResponse(content=response_data)
+
+
+@app.post("/read-mcp")
+async def read_mcp_endpoint(request: Request) -> Response:
+	try:
+		payload = await request.json()
+	except Exception:
+		return JSONResponse(
+			status_code=400,
+			content={
+				"jsonrpc": "2.0",
+				"id": None,
+				"error": {"code": -32700, "message": "Parse error: invalid JSON"},
+			},
+		)
+
+	response_data = await handle_read_mcp_request(payload)
 	if response_data is None:
 		return Response(status_code=204)
 	return JSONResponse(content=response_data)
