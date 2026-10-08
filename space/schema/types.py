@@ -39,6 +39,29 @@ class Room(TypedDict, total=False):
     updated_at: str
 
 
+class Topic(TypedDict, total=False):
+    id: int
+    project_id: int
+    parent_topic_id: int | None
+    name: str
+    related_topics: str | None
+    active: bool
+    importance_level: int | None
+    memory: str | None
+    state: str | None
+    need_an_action: bool
+    required_actions: str | None
+    created_at: str
+    updated_at: str
+
+
+class TopicList(TypedDict, total=False):
+    count: int
+    page: int
+    per_page: int
+    topics: list[Topic]
+
+
 class Message(TypedDict, total=False):
     id: int
     room_id: int
@@ -60,6 +83,57 @@ class MessageList(TypedDict, total=False):
     page: int
     per_page: int
     messages: list[Message]
+
+
+class MessageTopic(TypedDict, total=False):
+    id: int
+    topic_id: int
+    message_id: int
+    created_date: str
+    created_at: str
+    updated_at: str
+
+
+class MessageTopicList(TypedDict, total=False):
+    count: int
+    page: int
+    per_page: int
+    message_topics: list[MessageTopic]
+
+
+class MessageAnalysis(TypedDict, total=False):
+    id: int
+    message_id: int
+    importance_level: int
+    message_content_summary: str
+    message_type: str
+    tags: str | None
+    is_a_response: bool
+    created_at: str
+    updated_at: str
+
+
+class MessageAnalysisList(TypedDict, total=False):
+    count: int
+    page: int
+    per_page: int
+    message_analysis: list[MessageAnalysis]
+
+
+class RoomHistoryTopic(TypedDict, total=False):
+    id: int
+    room_id: int
+    created_date: str
+    last_state: str | None
+    created_at: str
+    updated_at: str
+
+
+class RoomHistoryTopicList(TypedDict, total=False):
+    count: int
+    page: int
+    per_page: int
+    room_history_topics: list[RoomHistoryTopic]
 
 
 class ActionAck(TypedDict, total=False):
