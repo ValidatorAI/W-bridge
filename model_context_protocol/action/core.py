@@ -5,11 +5,10 @@ import time
 import traceback
 from typing import Any
 
-from db.database import SessionLocal
 from db.exception_store import persist_mcp_call_log
+from db.database import SessionLocal
 from db.models import McpException
-
-from knowledge_mcp.tools import TOOL_DEFINITIONS, TOOL_HANDLERS
+from .tools import TOOL_DEFINITIONS, TOOL_HANDLERS
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +99,7 @@ async def call_tool(
             result_size=len(error_message),
             duration_ms=elapsed_ms,
         )
-        logger.warning("Knowledge MCP tool not found: %s", name)
+        logger.warning("MCP tool not found: %s", name)
         return {
             "content": [{"type": "text", "text": error_message}],
             "isError": True,
@@ -109,7 +108,7 @@ async def call_tool(
     handler = TOOL_HANDLERS[name]
 
     try:
-        logger.info("Knowledge MCP tool call started: tool=%s request_id=%s", name, jsonrpc_id)
+        logger.info("MCP tool call started: tool=%s request_id=%s", name, jsonrpc_id)
         if inspect.iscoroutinefunction(handler):
             result = await handler(**args)
         else:
@@ -122,7 +121,7 @@ async def call_tool(
 
         preview_text = text_result
         is_error = False
-        logger.info("Knowledge MCP tool call finished: tool=%s request_id=%s", name, jsonrpc_id)
+        logger.info("MCP tool call finished: tool=%s request_id=%s", name, jsonrpc_id)
 
         return {
             "content": [{"type": "text", "text": text_result}],
@@ -132,7 +131,7 @@ async def call_tool(
         error_message = str(exc)
         preview_text = f"Error executing tool '{name}': {error_message}"
         _persist_tool_exception(name, exc)
-        logger.exception("Knowledge MCP tool call failed: tool=%s request_id=%s", name, jsonrpc_id)
+        logger.exception("MCP tool call failed: tool=%s request_id=%s", name, jsonrpc_id)
         return {
             "content": [{"type": "text", "text": preview_text}],
             "isError": True,
@@ -151,5 +150,3 @@ async def call_tool(
             duration_ms=elapsed_ms,
         )
 
-
-__all__ = ["call_tool", "list_tools"]

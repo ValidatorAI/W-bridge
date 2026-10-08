@@ -76,7 +76,6 @@ def _pick_best_match(query: str, records: Iterable[Any], key_getter) -> Any | No
 
 
 async def username_fuzzy_match(project_id: int | str, username: str) -> dict[str, Any] | None:
-    """Return the single best-matching project user by name, display name, or email."""
     payload = await list_project_users(project_id)
     records = payload.get("project_users", []) if isinstance(payload, dict) else payload or []
 
@@ -94,7 +93,6 @@ async def username_fuzzy_match(project_id: int | str, username: str) -> dict[str
 
 
 async def project_name_fuzzy_match(project_name: str) -> dict[str, Any] | None:
-    """Return the single best-matching project by name or slug."""
     projects = await list_projects()
 
     def get_name(project: Any) -> str:
@@ -106,7 +104,6 @@ async def project_name_fuzzy_match(project_name: str) -> dict[str, Any] | None:
 
 
 async def room_name_fuzzy(project_id: int | str, room_name: str) -> dict[str, Any] | None:
-    """Return the single best-matching room within a project by name."""
     try:
         rooms = await search_rooms(project_id, room_name)
     except Exception:
@@ -124,7 +121,6 @@ async def room_name_fuzzy(project_id: int | str, room_name: str) -> dict[str, An
 
 
 async def bot_name_fuzzy_match(project_id: int | str, bot_name: str) -> dict[str, Any] | None:
-    """Return the single best-matching bot (role == 2) from project users."""
     payload = await list_project_users(project_id)
     records = payload.get("project_users", []) if isinstance(payload, dict) else payload or []
     bots = [

@@ -10,7 +10,7 @@ from typing import Any, Callable
 import httpx
 from db.exception_store import persist_api_exception
 
-from mcp.helpers import (
+from model_context_protocol.shared.helpers import (
     bot_name_fuzzy_match,
     project_name_fuzzy_match,
     room_name_fuzzy,

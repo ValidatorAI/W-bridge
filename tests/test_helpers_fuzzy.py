@@ -2,13 +2,13 @@ import asyncio
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from mcp import helpers
+from model_context_protocol.shared import helpers
 
 
 class TestFuzzyMatchHelpers(unittest.TestCase):
     def test_project_name_fuzzy_match(self):
         async def _run():
-            with patch("mcp.helpers.list_projects", AsyncMock(return_value=[
+            with patch("model_context_protocol.shared.helpers.list_projects", AsyncMock(return_value=[
                 {"id": 1, "name": "Alpha Project"},
                 {"id": 2, "name": "Beta Launch"},
             ])):
@@ -21,7 +21,7 @@ class TestFuzzyMatchHelpers(unittest.TestCase):
 
     def test_room_name_fuzzy(self):
         async def _run():
-            with patch("mcp.helpers.search_rooms", AsyncMock(return_value=[
+            with patch("model_context_protocol.shared.helpers.search_rooms", AsyncMock(return_value=[
                 {"id": 10, "name": "Design Review"},
                 {"id": 11, "name": "Ops Standup"},
             ])):
@@ -34,7 +34,7 @@ class TestFuzzyMatchHelpers(unittest.TestCase):
 
     def test_username_fuzzy_match(self):
         async def _run():
-            with patch("mcp.helpers.list_project_users", AsyncMock(return_value={
+            with patch("model_context_protocol.shared.helpers.list_project_users", AsyncMock(return_value={
                 "project_users": [
                     {"id": 1, "name": "Alicia Stone"},
                     {"id": 2, "name": "Miguel Lee"},
@@ -49,7 +49,7 @@ class TestFuzzyMatchHelpers(unittest.TestCase):
 
     def test_bot_name_fuzzy_match(self):
         async def _run():
-            with patch("mcp.helpers.list_project_users", AsyncMock(return_value={
+            with patch("model_context_protocol.shared.helpers.list_project_users", AsyncMock(return_value={
                 "project_users": [
                     {"id": 5, "name": "Hera Bot", "role": 2},
                     {"id": 6, "name": "Alicia Stone", "role": 1},
@@ -65,7 +65,7 @@ class TestFuzzyMatchHelpers(unittest.TestCase):
 
     def test_no_match_returns_none(self):
         async def _run():
-            with patch("mcp.helpers.list_projects", AsyncMock(return_value=[
+            with patch("model_context_protocol.shared.helpers.list_projects", AsyncMock(return_value=[
                 {"id": 1, "name": "Alpha Project"},
             ])):
                 match = await helpers.project_name_fuzzy_match("totally unrelated xyz")

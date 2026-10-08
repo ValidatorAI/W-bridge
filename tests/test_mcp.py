@@ -6,8 +6,8 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from main import app
-from mcp.core import call_tool, list_tools
-from mcp.tools import hello
+from model_context_protocol.action.core import call_tool, list_tools
+from model_context_protocol.action.tools import hello
 
 
 class TestMCP(unittest.TestCase):

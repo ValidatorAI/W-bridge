@@ -54,7 +54,7 @@ from space.api import (
     list_skills,
     list_tools,
 )
-from knowledge_mcp.helpers import (
+from model_context_protocol.shared.helpers import (
     bot_name_fuzzy_match,
     project_name_fuzzy_match,
     room_name_fuzzy,
