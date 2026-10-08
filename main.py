@@ -18,7 +18,7 @@ from bus.queues import SpaceEventQueueItem
 from db.database import SessionLocal
 from db.models import SpaceEvent
 from helpers.helpers import str_to_bool
-from model_context_protocol.knowledge.server import handle_knowledge_mcp_request
+from model_context_protocol.read.server import handle_knowledge_mcp_request
 from model_context_protocol.action.server import handle_mcp_request
 from schemas.pydantic import SpaceEventInput
 
