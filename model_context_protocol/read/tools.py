@@ -172,10 +172,6 @@ def _build_directory_tree(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return roots
 
 
-def hello(name: str = "World", **kwargs: Any) -> str:
-    return f"Hello, {name}!"
-
-
 async def decisions_waiting(**kwargs: Any) -> str:
     category = kwargs.get("category", "decisions_waiting")
     project_id = kwargs.get("project_id")
@@ -704,7 +700,6 @@ async def get_ai_profile_mcp_tool(ai_profile_mcp_id: Any, **kwargs: Any) -> str:
 
 
 TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
-    "hello": hello,
     "decisions_waiting": decisions_waiting,
     "blockers": blockers,
     "outcomes_review": outcomes_review,
@@ -763,11 +758,6 @@ TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
 
 
 _READ_ONLY_TOOL_DEFINITIONS = [
-    (
-        "hello",
-        "Say hello to a given name or the world",
-        {"type": "object", "properties": {"name": {"type": "string", "description": "The name to greet", "default": "World"}}},
-    ),
     ("decisions_waiting", "List company-home decisions-waiting attention items", {"type": "object", "properties": {"project_id": {"type": ["string", "integer"]}, "project_name": {"type": "string"}, "room_id": {"type": ["string", "integer"]}, "room_name": {"type": "string"}, "user_id": {"type": ["string", "integer"]}, "user_name": {"type": "string"}, "status": {"type": "string"}, "overdue": {"type": "boolean"}, "ai_confirm": {"type": "boolean"}, "page": {"type": "integer"}, "per_page": {"type": "integer"}}}),
     ("blockers", "List company-home blocker attention items", {"type": "object", "properties": {"project_id": {"type": ["string", "integer"]}, "project_name": {"type": "string"}, "room_id": {"type": ["string", "integer"]}, "room_name": {"type": "string"}, "user_id": {"type": ["string", "integer"]}, "user_name": {"type": "string"}, "status": {"type": "string"}, "overdue": {"type": "boolean"}, "page": {"type": "integer"}, "per_page": {"type": "integer"}}}),
     ("outcomes_review", "List company-home outcomes-review attention items", {"type": "object", "properties": {"project_id": {"type": ["string", "integer"]}, "project_name": {"type": "string"}, "room_id": {"type": ["string", "integer"]}, "room_name": {"type": "string"}, "user_id": {"type": ["string", "integer"]}, "user_name": {"type": "string"}, "status": {"type": "string"}, "overdue": {"type": "boolean"}, "page": {"type": "integer"}, "per_page": {"type": "integer"}}}),
@@ -826,7 +816,6 @@ TOOL_DEFINITIONS = [
 __all__ = [
     "TOOL_DEFINITIONS",
     "TOOL_HANDLERS",
-    "hello",
     "decisions_waiting",
     "blockers",
     "outcomes_review",

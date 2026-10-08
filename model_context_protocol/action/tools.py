@@ -312,14 +312,6 @@ def _build_directory_tree(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 # ============================================================================
-# Example / Baseline
-# ============================================================================
-
-def hello(name: str = "World", **kwargs: Any) -> str:
-    return f"Hello, {name}!"
-
-
-# ============================================================================
 # 1. Company Home
 # ============================================================================
 
@@ -2429,7 +2421,6 @@ _ACTIVE_PROP: dict[str, Any] = {
 # ------------------------------------------------------------------------------
 
 TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
-    "hello": hello,
     # Company Home
     "decisions_waiting": decisions_waiting,
     "blockers": blockers,
@@ -2599,44 +2590,15 @@ TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
     "AddApproveRequestWithMessage": add_approve_request_with_message,
     "approval_requests": approval_requests,
     "ApprovalRequests": approval_requests,
-    "get_approval_request": get_approval_request_tool,
-    "GetApprovalRequest": get_approval_request_tool,
     "add_approval_request": add_approval_request,
     "AddApprovalRequest": add_approval_request,
     "edit_approval_request": edit_approval_request,
     "EditApprovalRequest": edit_approval_request,
     "delete_approval_request": delete_approval_request_tool,
     "DeleteApprovalRequest": delete_approval_request_tool,
-    # AI Config Tools
-    "list_ai_profiles": list_ai_profiles_tool,
-    "get_ai_profile": get_ai_profile_tool,
-    "list_ai_settings": list_ai_settings_tool,
-    "get_ai_setting": get_ai_setting_tool,
-    "list_mcps": list_mcps_tool,
-    "get_mcp": get_mcp_tool,
-    "list_tools": list_tools_tool,
-    "get_tool": get_tool_tool,
-    "list_skills": list_skills_tool,
-    "get_skill": get_skill_tool,
-    "list_ai_profile_tools": list_ai_profile_tools_tool,
-    "get_ai_profile_tool": get_ai_profile_tool_link,
-    "list_ai_profile_skills": list_ai_profile_skills_tool,
-    "get_ai_profile_skill": get_ai_profile_skill_tool,
-    "list_ai_profile_mcps": list_ai_profile_mcps_tool,
-    "get_ai_profile_mcp": get_ai_profile_mcp_tool,
 }
 
 _TOOL_METADATA = [
-    (
-        "hello",
-        "Say hello to a given name or the world",
-        {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string", "description": "The name to greet", "default": "World"}
-            },
-        },
-    ),
     # Company Home
     (
         "decisions_waiting",
@@ -4055,19 +4017,6 @@ _TOOL_METADATA = [
         },
     ),
     (
-        "get_approval_request",
-        "Get a single approval request in a room",
-        {
-            "type": "object",
-            "properties": {
-                **_PROJECT_ID_PROPS,
-                **_ROOM_ID_PROPS,
-                "approval_request_id": {"type": ["string", "integer"], "description": "Approval request ID"},
-            },
-            "required": ["approval_request_id"],
-        },
-    ),
-    (
         "add_approval_request",
         "Create an approval request in a room",
         {
@@ -4118,168 +4067,6 @@ _TOOL_METADATA = [
                 "approval_request_id": {"type": ["string", "integer"], "description": "Approval request ID"},
             },
             "required": ["approval_request_id"],
-        },
-    ),
-    # AI Config Tools
-    (
-        "list_ai_profiles",
-        "List AI profiles",
-        {
-            "type": "object",
-            "properties": {},
-        },
-    ),
-    (
-        "get_ai_profile",
-        "Get a single AI profile",
-        {
-            "type": "object",
-            "properties": {
-                "ai_profile_id": {"type": ["string", "integer"], "description": "AI profile ID"},
-            },
-            "required": ["ai_profile_id"],
-        },
-    ),
-    (
-        "list_ai_settings",
-        "List AI settings",
-        {
-            "type": "object",
-            "properties": {},
-        },
-    ),
-    (
-        "get_ai_setting",
-        "Get a single AI setting",
-        {
-            "type": "object",
-            "properties": {
-                "ai_setting_id": {"type": ["string", "integer"], "description": "AI setting ID"},
-            },
-            "required": ["ai_setting_id"],
-        },
-    ),
-    (
-        "list_mcps",
-        "List MCP servers",
-        {
-            "type": "object",
-            "properties": {},
-        },
-    ),
-    (
-        "get_mcp",
-        "Get a single MCP server",
-        {
-            "type": "object",
-            "properties": {
-                "mcp_id": {"type": ["string", "integer"], "description": "MCP server ID"},
-            },
-            "required": ["mcp_id"],
-        },
-    ),
-    (
-        "list_tools",
-        "List AI tools",
-        {
-            "type": "object",
-            "properties": {},
-        },
-    ),
-    (
-        "get_tool",
-        "Get a single AI tool",
-        {
-            "type": "object",
-            "properties": {
-                "tool_id": {"type": ["string", "integer"], "description": "AI tool ID"},
-            },
-            "required": ["tool_id"],
-        },
-    ),
-    (
-        "list_skills",
-        "List AI skills",
-        {
-            "type": "object",
-            "properties": {},
-        },
-    ),
-    (
-        "get_skill",
-        "Get a single AI skill",
-        {
-            "type": "object",
-            "properties": {
-                "skill_id": {"type": ["string", "integer"], "description": "AI skill ID"},
-            },
-            "required": ["skill_id"],
-        },
-    ),
-    (
-        "list_ai_profile_tools",
-        "List AI profile-tool assignments",
-        {
-            "type": "object",
-            "properties": {
-                "ai_profile_id": {"type": ["string", "integer"], "description": "Filter by AI profile ID"},
-                "tool_id": {"type": ["string", "integer"], "description": "Filter by tool ID"},
-            },
-        },
-    ),
-    (
-        "get_ai_profile_tool",
-        "Get a single AI profile-tool assignment",
-        {
-            "type": "object",
-            "properties": {
-                "ai_profile_tool_id": {"type": ["string", "integer"], "description": "AI profile-tool assignment ID"},
-            },
-            "required": ["ai_profile_tool_id"],
-        },
-    ),
-    (
-        "list_ai_profile_skills",
-        "List AI profile-skill assignments",
-        {
-            "type": "object",
-            "properties": {
-                "ai_profile_id": {"type": ["string", "integer"], "description": "Filter by AI profile ID"},
-                "skill_id": {"type": ["string", "integer"], "description": "Filter by skill ID"},
-            },
-        },
-    ),
-    (
-        "get_ai_profile_skill",
-        "Get a single AI profile-skill assignment",
-        {
-            "type": "object",
-            "properties": {
-                "ai_profile_skill_id": {"type": ["string", "integer"], "description": "AI profile-skill assignment ID"},
-            },
-            "required": ["ai_profile_skill_id"],
-        },
-    ),
-    (
-        "list_ai_profile_mcps",
-        "List AI profile-MCP assignments",
-        {
-            "type": "object",
-            "properties": {
-                "ai_profile_id": {"type": ["string", "integer"], "description": "Filter by AI profile ID"},
-                "mcp_id": {"type": ["string", "integer"], "description": "Filter by MCP server ID"},
-            },
-        },
-    ),
-    (
-        "get_ai_profile_mcp",
-        "Get a single AI profile-MCP assignment",
-        {
-            "type": "object",
-            "properties": {
-                "ai_profile_mcp_id": {"type": ["string", "integer"], "description": "AI profile-MCP assignment ID"},
-            },
-            "required": ["ai_profile_mcp_id"],
         },
     ),
 ]
@@ -4341,7 +4128,6 @@ _ALIASES = [
     ("AddDecisionMessage", "add_decision_message"),
     ("AddApproveRequestWithMessage", "add_approve_request_with_message"),
     ("ApprovalRequests", "approval_requests"),
-    ("GetApprovalRequest", "get_approval_request"),
     ("AddApprovalRequest", "add_approval_request"),
     ("EditApprovalRequest", "edit_approval_request"),
     ("DeleteApprovalRequest", "delete_approval_request"),
@@ -4350,3 +4136,52 @@ _ALIASES = [
 _SCHEMAS_BY_NAME = {name: schema for name, _, schema in _TOOL_METADATA}
 for alias_name, base_name in _ALIASES:
     _TOOL_METADATA.append((alias_name, f"Alias for {base_name}", _SCHEMAS_BY_NAME[base_name]))
+
+TOOL_DEFINITIONS = [
+    {"name": name, "description": description, "inputSchema": schema}
+    for name, description, schema in _TOOL_METADATA
+]
+
+__all__ = [
+    "TOOL_DEFINITIONS",
+    "TOOL_HANDLERS",
+    "decisions_waiting",
+    "blockers",
+    "outcomes_review",
+    "mentions",
+    "material_changes",
+    "ai_confirm",
+    "knowledge_proposals",
+    "company_status_period",
+    "priorities",
+    "progress",
+    "risks",
+    "dependencies",
+    "changes",
+    "decisions",
+    "learnings",
+    "project_milestones",
+    "project_bottlenecks",
+    "project_todos",
+    "project_knowledge_items",
+    "project_all_hands_takeaway",
+    "project_all_hands_action_item",
+    "project_all_hands_decision",
+    "project_decision_records",
+    "external_knowledge_assets",
+    "knowledge_activity_log",
+    "tree_based_project_directory_data",
+    "knowledge_summary_items",
+    "project_obsidian_note",
+    "add_message",
+    "add_loading_message",
+    "edit_loading_message",
+    "delete_loading_message",
+    "add_action_message",
+    "add_decision_message",
+    "add_approve_request_with_message",
+    "approval_requests",
+    "add_approval_request",
+    "edit_approval_request",
+    "delete_approval_request_tool",
+]
