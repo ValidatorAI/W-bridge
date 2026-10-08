@@ -6,7 +6,7 @@ from space.api import (
     get_ai_profile,
     get_ai_profile_mcp,
     get_ai_profile_skill,
-    get_ai_profile_tool,
+    get_ai_profile_tool as get_ai_profile_tool_record,
     get_ai_setting,
     get_all_hands_action_item,
     get_all_hands_decision,
@@ -613,7 +613,7 @@ async def approval_requests(
     **kwargs: Any,
 ) -> str:
     resolved_project_id = await _resolve_project_id(project_id, project_name)
-    resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name) if (room_id is not None or room_name) else None
+    resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name)
     result = await list_approval_requests(
         resolved_project_id,
         resolved_room_id,
@@ -632,8 +632,10 @@ async def get_approval_request_tool(
     **kwargs: Any,
 ) -> str:
     resolved_project_id = await _resolve_project_id(project_id, project_name)
-    resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name) if (room_id is not None or room_name) else None
-    result = await get_approval_request(resolved_project_id, resolved_room_id, approval_request_id)
+    resolved_room_id = await _resolve_room_id(resolved_project_id, room_id, room_name)
+    result = await get_approval_request(
+        resolved_project_id, resolved_room_id, approval_request_id
+    )
     return _format_result(result)
 
 
@@ -682,7 +684,7 @@ async def list_ai_profile_tools_tool(ai_profile_id: Any = None, tool_id: Any = N
 
 
 async def get_ai_profile_tool_link(ai_profile_tool_id: Any, **kwargs: Any) -> str:
-    return _format_result(await get_ai_profile_tool(ai_profile_tool_id))
+    return _format_result(await get_ai_profile_tool_record(ai_profile_tool_id))
 
 
 async def list_ai_profile_skills_tool(ai_profile_id: Any = None, skill_id: Any = None, **kwargs: Any) -> str:

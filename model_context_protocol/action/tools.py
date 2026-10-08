@@ -58,7 +58,7 @@ from space.api import (
     get_ai_profile,
     get_ai_profile_mcp,
     get_ai_profile_skill,
-    get_ai_profile_tool,
+    get_ai_profile_tool as get_ai_profile_tool_record,
     get_ai_setting,
     get_all_hands_action_item,
     get_all_hands_decision,
@@ -2330,7 +2330,7 @@ async def list_ai_profile_tools_tool(
 
 
 async def get_ai_profile_tool_link(ai_profile_tool_id: Any, **kwargs: Any) -> str:
-    result = await get_ai_profile_tool(ai_profile_tool_id)
+    result = await get_ai_profile_tool_record(ai_profile_tool_id)
     return _format_result(result)
 
 
