@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 
 from main import app
 from model_context_protocol.action.core import call_tool, list_tools
-from model_context_protocol.action.tools import hello
 
 
 class TestMCP(unittest.TestCase):
@@ -26,9 +25,6 @@ class TestMCP(unittest.TestCase):
         touch_mock.assert_called_once_with(exist_ok=True)
         self.assertEqual(response.json()["path"], str(trigger_path))
 
-    def test_hello_tool_function(self):
-        self.assertEqual(hello(), "Hello, World!")
-        self.assertEqual(hello("Developer"), "Hello, Developer!")
 
     def test_knowledge_mcp_hello_only(self):
         response = self.client.post(
@@ -63,6 +59,30 @@ class TestMCP(unittest.TestCase):
         self.assertIn("project_milestones", tool_names)
         self.assertIn("list_ai_profiles", tool_names)
         self.assertIn("get_ai_profile", tool_names)
+        self.assertIn("topics", tool_names)
+        self.assertIn("list_topics", tool_names)
+        self.assertIn("get_topic", tool_names)
+        self.assertIn("create_topic", tool_names)
+        self.assertIn("update_topic", tool_names)
+        self.assertIn("delete_topic", tool_names)
+        self.assertIn("message_analysis", tool_names)
+        self.assertIn("list_message_analysis", tool_names)
+        self.assertIn("get_message_analysis", tool_names)
+        self.assertIn("create_message_analysis", tool_names)
+        self.assertIn("update_message_analysis", tool_names)
+        self.assertIn("delete_message_analysis", tool_names)
+        self.assertIn("message_topics", tool_names)
+        self.assertIn("list_message_topics", tool_names)
+        self.assertIn("get_message_topic", tool_names)
+        self.assertIn("create_message_topic", tool_names)
+        self.assertIn("update_message_topic", tool_names)
+        self.assertIn("delete_message_topic", tool_names)
+        self.assertIn("room_history_topics", tool_names)
+        self.assertIn("list_room_history_topics", tool_names)
+        self.assertIn("get_room_history_topic", tool_names)
+        self.assertIn("create_room_history_topic", tool_names)
+        self.assertIn("update_room_history_topic", tool_names)
+        self.assertIn("delete_room_history_topic", tool_names)
         self.assertNotIn("add_project_knowledge_item", tool_names)
         self.assertNotIn("edit_project_knowledge_item", tool_names)
         self.assertNotIn("delete_project_knowledge_item", tool_names)
