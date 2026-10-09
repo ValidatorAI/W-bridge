@@ -166,7 +166,19 @@ from .project_users import get_project_user, list_project_users
 from .projects import get_project, list_projects
 from .rooms import get_room, list_room_threads, list_rooms, search_rooms
 from .skills import get_skill, list_skills
-from .tasks import create_task, delete_task, get_task, list_tasks, task_cost, update_task, update_task_cost
+from .tasks import (
+    create_task,
+    delete_task,
+    get_all_children_tasks,
+    get_all_parent_tasks,
+    get_task,
+    get_task_children,
+    get_task_parents,
+    list_tasks,
+    task_cost,
+    update_task,
+    update_task_cost,
+)
 from .tools import get_tool, list_tools
 
 
@@ -250,6 +262,10 @@ __all__ = [
     "get_obsidian_note",
     "get_project",
     "get_room_history_topic",
+    "get_task_children",
+    "get_task_parents",
+    "get_all_children_tasks",
+    "get_all_parent_tasks",
     "get_topic",
     "get_project_bottleneck",
     "get_project_milestone",

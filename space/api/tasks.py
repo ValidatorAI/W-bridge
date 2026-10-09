@@ -29,6 +29,22 @@ async def get_task(task_id: int | str) -> Task:
     return await request("GET", f"/tasks/{task_id}")
 
 
+async def get_all_children_tasks(task_id: int | str) -> TaskList:
+    return await request("GET", f"/tasks/{task_id}/children")
+
+
+async def get_all_parent_tasks(task_id: int | str) -> TaskList:
+    return await request("GET", f"/tasks/{task_id}/parents")
+
+
+async def get_task_children(task_id: int | str) -> TaskList:
+    return await get_all_children_tasks(task_id)
+
+
+async def get_task_parents(task_id: int | str) -> TaskList:
+    return await get_all_parent_tasks(task_id)
+
+
 async def create_task(
     description: str,
     *,

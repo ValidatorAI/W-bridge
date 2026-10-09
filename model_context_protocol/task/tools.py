@@ -4,7 +4,11 @@ from typing import Any, Callable
 from space.api import (
     create_task,
     delete_task,
+    get_all_children_tasks,
+    get_all_parent_tasks,
     get_task,
+    get_task_children,
+    get_task_parents,
     list_tasks,
     task_cost,
     update_task,
@@ -106,6 +110,22 @@ async def delete_task_tool(task_id: Any, **kwargs: Any) -> str:
     return _format_result(await delete_task(task_id))
 
 
+async def get_all_children_tasks_tool(task_id: Any, **kwargs: Any) -> str:
+    return _format_result(await get_all_children_tasks(task_id))
+
+
+async def get_all_parent_tasks_tool(task_id: Any, **kwargs: Any) -> str:
+    return _format_result(await get_all_parent_tasks(task_id))
+
+
+async def get_task_children_tool(task_id: Any, **kwargs: Any) -> str:
+    return _format_result(await get_task_children(task_id))
+
+
+async def get_task_parents_tool(task_id: Any, **kwargs: Any) -> str:
+    return _format_result(await get_task_parents(task_id))
+
+
 async def task_cost_tool(task_id: Any, **kwargs: Any) -> str:
     result = await task_cost(
         task_id,
@@ -132,6 +152,10 @@ TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
     "create_task": create_task_tool,
     "update_task": update_task_tool,
     "delete_task": delete_task_tool,
+    "get_all_children_tasks": get_all_children_tasks_tool,
+    "get_all_parent_tasks": get_all_parent_tasks_tool,
+    "get_task_children": get_task_children_tool,
+    "get_task_parents": get_task_parents_tool,
     "task_cost": task_cost_tool,
     "update_task_cost": update_task_cost_tool,
 }
@@ -252,6 +276,24 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "get_all_children_tasks",
+        "description": "List all descendant tasks including grandchildren and deeper nested children",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"task_id": {"type": ["string", "integer"]}},
+            "required": ["task_id"],
+        },
+    },
+    {
+        "name": "get_all_parent_tasks",
+        "description": "List all ancestor tasks from the direct parent up through the root task",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"task_id": {"type": ["string", "integer"]}},
+            "required": ["task_id"],
+        },
+    },
+    {
         "name": "task_cost",
         "description": "Roll task token and USD usage changes up through the parent chain",
         "inputSchema": {
@@ -289,6 +331,10 @@ __all__ = [
     "create_task_tool",
     "update_task_tool",
     "delete_task_tool",
+    "get_all_children_tasks_tool",
+    "get_all_parent_tasks_tool",
+    "get_task_children_tool",
+    "get_task_parents_tool",
     "task_cost_tool",
     "update_task_cost_tool",
 ]
