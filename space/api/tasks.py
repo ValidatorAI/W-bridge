@@ -36,6 +36,7 @@ async def create_task(
     token_used: int | None = None,
     token_budget: int | None = None,
     usd_usage: float | None = None,
+    usd_used: float | None = None,
     usd_budget: float | None = None,
     room_id: int | str | None = None,
     project_id: int | str | None = None,
@@ -56,6 +57,7 @@ async def create_task(
                 "token_used": token_used,
                 "token_budget": token_budget,
                 "usd_usage": usd_usage,
+                "usd_used": usd_used,
                 "usd_budget": usd_budget,
                 "room_id": room_id,
                 "project_id": project_id,
@@ -79,6 +81,7 @@ async def update_task(
     token_used: int | None = None,
     token_budget: int | None = None,
     usd_usage: float | None = None,
+    usd_used: float | None = None,
     usd_budget: float | None = None,
     room_id: int | str | None = None,
     project_id: int | str | None = None,
@@ -100,6 +103,7 @@ async def update_task(
                 "token_used": token_used,
                 "token_budget": token_budget,
                 "usd_usage": usd_usage,
+                "usd_used": usd_used,
                 "usd_budget": usd_budget,
                 "room_id": room_id,
                 "project_id": project_id,
@@ -118,3 +122,31 @@ async def update_task(
 
 async def delete_task(task_id: int | str) -> None:
     return await request("DELETE", f"/tasks/{task_id}")
+
+
+async def task_cost(
+    task_id: int | str,
+    *,
+    token_used: int | None = None,
+    usd_used: float | None = None,
+) -> Task:
+    return await request(
+        "PATCH",
+        "/tasks/task_cost",
+        json=prune(
+            {
+                "task_id": task_id,
+                "token_used": token_used,
+                "usd_used": usd_used,
+            }
+        ),
+    )
+
+
+async def update_task_cost(
+    task_id: int | str,
+    *,
+    token_used: int | None = None,
+    usd_used: float | None = None,
+) -> Task:
+    return await task_cost(task_id=task_id, token_used=token_used, usd_used=usd_used)

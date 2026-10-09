@@ -166,7 +166,7 @@ from .project_users import get_project_user, list_project_users
 from .projects import get_project, list_projects
 from .rooms import get_room, list_room_threads, list_rooms, search_rooms
 from .skills import get_skill, list_skills
-from .tasks import create_task, delete_task, get_task, list_tasks, update_task
+from .tasks import create_task, delete_task, get_task, list_tasks, task_cost, update_task, update_task_cost
 from .tools import get_tool, list_tools
 
 
@@ -219,6 +219,7 @@ __all__ = [
     "delete_project_milestone",
     "delete_project_todo",
     "download_attachment_by_id",
+    "task_cost",
     "download_message_attachment",
     "filter_company_status_items",
     "get_adr",
@@ -315,6 +316,7 @@ __all__ = [
     "update_project_bottleneck",
     "update_room_history_topic",
     "update_task",
+    "update_task_cost",
     "update_topic",
     "update_project_milestone",
     "update_project_todo",

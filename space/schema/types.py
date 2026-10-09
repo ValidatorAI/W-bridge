@@ -479,6 +479,7 @@ class Task(TypedDict, total=False):
     token_used: int | None
     token_budget: int | None
     usd_usage: float | None
+    usd_used: float | None
     usd_budget: float | None
     room_id: int | None
     project_id: int | None

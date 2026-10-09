@@ -6,7 +6,9 @@ from space.api import (
     delete_task,
     get_task,
     list_tasks,
+    task_cost,
     update_task,
+    update_task_cost,
 )
 
 
@@ -62,6 +64,7 @@ async def create_task_tool(description: str, **kwargs: Any) -> str:
         token_used=kwargs.get("token_used"),
         token_budget=kwargs.get("token_budget"),
         usd_usage=kwargs.get("usd_usage"),
+        usd_used=kwargs.get("usd_used"),
         usd_budget=kwargs.get("usd_budget"),
         room_id=kwargs.get("room_id"),
         project_id=kwargs.get("project_id"),
@@ -83,6 +86,7 @@ async def update_task_tool(task_id: Any, **kwargs: Any) -> str:
         token_used=kwargs.get("token_used"),
         token_budget=kwargs.get("token_budget"),
         usd_usage=kwargs.get("usd_usage"),
+        usd_used=kwargs.get("usd_used"),
         usd_budget=kwargs.get("usd_budget"),
         room_id=kwargs.get("room_id"),
         project_id=kwargs.get("project_id"),
@@ -102,6 +106,24 @@ async def delete_task_tool(task_id: Any, **kwargs: Any) -> str:
     return _format_result(await delete_task(task_id))
 
 
+async def task_cost_tool(task_id: Any, **kwargs: Any) -> str:
+    result = await task_cost(
+        task_id,
+        token_used=kwargs.get("token_used"),
+        usd_used=kwargs.get("usd_used"),
+    )
+    return _format_result(result)
+
+
+async def update_task_cost_tool(task_id: Any, **kwargs: Any) -> str:
+    result = await update_task_cost(
+        task_id,
+        token_used=kwargs.get("token_used"),
+        usd_used=kwargs.get("usd_used"),
+    )
+    return _format_result(result)
+
+
 TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
     "hello": hello,
     "tasks": tasks,
@@ -110,6 +132,8 @@ TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
     "create_task": create_task_tool,
     "update_task": update_task_tool,
     "delete_task": delete_task_tool,
+    "task_cost": task_cost_tool,
+    "update_task_cost": update_task_cost_tool,
 }
 
 
@@ -176,6 +200,7 @@ TOOL_DEFINITIONS = [
                 "token_used": {"type": "integer"},
                 "token_budget": {"type": "integer"},
                 "usd_usage": {"type": "number"},
+                "usd_used": {"type": "number"},
                 "usd_budget": {"type": "number"},
                 "room_id": {"type": ["string", "integer"]},
                 "project_id": {"type": ["string", "integer"]},
@@ -202,6 +227,7 @@ TOOL_DEFINITIONS = [
                 "token_used": {"type": "integer"},
                 "token_budget": {"type": "integer"},
                 "usd_usage": {"type": "number"},
+                "usd_used": {"type": "number"},
                 "usd_budget": {"type": "number"},
                 "room_id": {"type": ["string", "integer"]},
                 "project_id": {"type": ["string", "integer"]},
@@ -225,6 +251,32 @@ TOOL_DEFINITIONS = [
             "required": ["task_id"],
         },
     },
+    {
+        "name": "task_cost",
+        "description": "Roll task token and USD usage changes up through the parent chain",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": ["string", "integer"]},
+                "token_used": {"type": "integer"},
+                "usd_used": {"type": "number"},
+            },
+            "required": ["task_id"],
+        },
+    },
+    {
+        "name": "update_task_cost",
+        "description": "Alias for task_cost",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": ["string", "integer"]},
+                "token_used": {"type": "integer"},
+                "usd_used": {"type": "number"},
+            },
+            "required": ["task_id"],
+        },
+    },
 ]
 
 
@@ -237,4 +289,6 @@ __all__ = [
     "create_task_tool",
     "update_task_tool",
     "delete_task_tool",
+    "task_cost_tool",
+    "update_task_cost_tool",
 ]
