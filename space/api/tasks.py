@@ -6,6 +6,7 @@ async def list_tasks(
     *,
     room_id: int | str | None = None,
     project_id: int | str | None = None,
+    grand_parent_id: int | str | None = None,
     added_to_kanban: bool | None = None,
     runned: bool | None = None,
 ) -> TaskList:
@@ -16,6 +17,7 @@ async def list_tasks(
             {
                 "room_id": room_id,
                 "project_id": project_id,
+                "grand_parent_id": grand_parent_id,
                 "added_to_kanban": added_to_kanban,
                 "runned": runned,
             }
@@ -41,6 +43,7 @@ async def create_task(
     added_to_kanban: bool | None = None,
     runned: bool | None = None,
     parent_task_id: int | str | None = None,
+    grand_parent_id: int | str | None = None,
     importance: int | None = None,
     level: int | None = None,
 ) -> Task:
@@ -61,6 +64,7 @@ async def create_task(
                 "added_to_kanban": added_to_kanban,
                 "runned": runned,
                 "parent_task_id": parent_task_id,
+                "grand_parent_id": grand_parent_id,
                 "importance": importance,
                 "level": level,
             }
@@ -83,6 +87,7 @@ async def update_task(
     added_to_kanban: bool | None = None,
     runned: bool | None = None,
     parent_task_id: int | str | None = None,
+    grand_parent_id: int | str | None = None,
     importance: int | None = None,
     level: int | None = None,
 ) -> Task:
@@ -103,6 +108,7 @@ async def update_task(
                 "added_to_kanban": added_to_kanban,
                 "runned": runned,
                 "parent_task_id": parent_task_id,
+                "grand_parent_id": grand_parent_id,
                 "importance": importance,
                 "level": level,
             }

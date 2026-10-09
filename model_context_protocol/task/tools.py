@@ -36,6 +36,7 @@ def _coerce_bool(value: Any) -> bool | None:
 async def tasks(
     room_id: Any = None,
     project_id: Any = None,
+    grand_parent_id: Any = None,
     added_to_kanban: Any = None,
     runned: Any = None,
     **kwargs: Any,
@@ -43,6 +44,7 @@ async def tasks(
     result = await list_tasks(
         room_id=room_id,
         project_id=project_id,
+        grand_parent_id=grand_parent_id,
         added_to_kanban=_coerce_bool(added_to_kanban),
         runned=_coerce_bool(runned),
     )
@@ -67,6 +69,7 @@ async def create_task_tool(description: str, **kwargs: Any) -> str:
         added_to_kanban=_coerce_bool(kwargs.get("added_to_kanban")),
         runned=_coerce_bool(kwargs.get("runned")),
         parent_task_id=kwargs.get("parent_task_id"),
+        grand_parent_id=kwargs.get("grand_parent_id"),
         importance=kwargs.get("importance"),
         level=kwargs.get("level"),
     )
@@ -88,6 +91,7 @@ async def update_task_tool(task_id: Any, **kwargs: Any) -> str:
         added_to_kanban=_coerce_bool(kwargs.get("added_to_kanban")),
         runned=_coerce_bool(kwargs.get("runned")),
         parent_task_id=kwargs.get("parent_task_id"),
+        grand_parent_id=kwargs.get("grand_parent_id"),
         importance=kwargs.get("importance"),
         level=kwargs.get("level"),
     )
@@ -132,6 +136,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "room_id": {"type": ["string", "integer"]},
                 "project_id": {"type": ["string", "integer"]},
+                "grand_parent_id": {"type": ["string", "integer"]},
                 "added_to_kanban": {"type": "boolean"},
                 "runned": {"type": "boolean"},
             },
@@ -145,6 +150,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "room_id": {"type": ["string", "integer"]},
                 "project_id": {"type": ["string", "integer"]},
+                "grand_parent_id": {"type": ["string", "integer"]},
                 "added_to_kanban": {"type": "boolean"},
                 "runned": {"type": "boolean"},
             },
@@ -177,6 +183,7 @@ TOOL_DEFINITIONS = [
                 "added_to_kanban": {"type": "boolean"},
                 "runned": {"type": "boolean"},
                 "parent_task_id": {"type": ["string", "integer"]},
+                "grand_parent_id": {"type": ["string", "integer"]},
                 "importance": {"type": "integer"},
                 "level": {"type": "integer"},
             },
@@ -202,6 +209,7 @@ TOOL_DEFINITIONS = [
                 "added_to_kanban": {"type": "boolean"},
                 "runned": {"type": "boolean"},
                 "parent_task_id": {"type": ["string", "integer"]},
+                "grand_parent_id": {"type": ["string", "integer"]},
                 "importance": {"type": "integer"},
                 "level": {"type": "integer"},
             },

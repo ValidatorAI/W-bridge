@@ -487,6 +487,7 @@ class Task(TypedDict, total=False):
     added_to_kanban: bool
     runned: bool
     parent_task_id: int | None
+    grand_parent_id: int | None
     importance: int
     level: int
     created_at: str
