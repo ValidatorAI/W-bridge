@@ -478,6 +478,8 @@ class Task(TypedDict, total=False):
     adder_profile: str | None
     token_used: int | None
     token_budget: int | None
+    usd_usage: float | None
+    usd_budget: float | None
     room_id: int | None
     project_id: int | None
     description: str
