@@ -473,6 +473,29 @@ class ProjectTodoList(TypedDict, total=False):
     project_todos: list[ProjectTodo]
 
 
+class Task(TypedDict, total=False):
+    id: int
+    adder_profile: str | None
+    token_used: int | None
+    token_budget: int | None
+    room_id: int | None
+    project_id: int | None
+    description: str
+    assigneee_profile: str | None
+    added_to_kanban: bool
+    runned: bool
+    parent_task_id: int | None
+    importance: int
+    level: int
+    created_at: str
+    updated_at: str
+
+
+class TaskList(TypedDict, total=False):
+    count: int
+    tasks: list[Task]
+
+
 class ProjectMilestone(TypedDict, total=False):
     id: int
     project_id: int
